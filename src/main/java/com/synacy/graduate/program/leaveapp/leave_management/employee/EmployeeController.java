@@ -39,13 +39,13 @@ public class EmployeeController {
     }
 
     @PutMapping("api/v1/employee/{id}")
-    public UpdateEmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+    public UpdateEmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         /*
             TODO: Update exception being thrown once custom exceptions have been created.
              8/28/24 21:25
          */
         try {
-            Employee employee = getEmployee(id).orElseThrow(RuntimeException::new);
+            Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
             return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
         } catch (RuntimeException e) {
