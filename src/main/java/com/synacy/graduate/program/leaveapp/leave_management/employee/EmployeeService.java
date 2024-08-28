@@ -30,8 +30,8 @@ public class EmployeeService {
 
     public Employee createEmployee(CreateEmployeeRequest createEmployeeRequest) {
         Employee employee = new Employee();
-        employee.setFirstName(createEmployeeRequest.getFirstName());
-        employee.setLastName(createEmployeeRequest.getLastName());
+        employee.setFirstName(createEmployeeRequest.getFirstName().strip());
+        employee.setLastName(createEmployeeRequest.getLastName().strip());
         employee.setRole(createEmployeeRequest.getRole());
         employee.setTotalLeaves(createEmployeeRequest.getTotalLeaves());
         employee.setAvailableLeaves(createEmployeeRequest.getTotalLeaves());
