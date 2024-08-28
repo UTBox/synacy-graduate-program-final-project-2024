@@ -2,9 +2,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,5 +28,20 @@ public class EmployeeController {
                 .collect(Collectors.toList());
 
         return new PageResponse<>(employeeCount, page, employeeResponseList);
+    }
+
+    @PutMapping("api/v1/employee/{id}")
+    public UpdateEmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+        /*
+            TODO: Update exception being thrown once custom exceptions have been created.
+             8/28/24 21:25
+         */
+        try {
+            Employee employee = getEmployee(id).orElseThrow(RuntimeException::new);
+
+            return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
+        } catch (RuntimeException e) {
+            throw new RuntimeException();
+        }
     }
 }

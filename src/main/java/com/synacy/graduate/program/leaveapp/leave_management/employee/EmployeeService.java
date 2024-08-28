@@ -23,14 +23,12 @@ public class EmployeeService {
         return employeeRepository.findAll(pageable);
     }
 
-    public UpdateEmployeeResponse updateEmployee(Optional<Employee> selectedEmployee, Optional<Integer> updatedTotalLeaveCredits) {
-        /* TODO: Update exceptions being thrown once custom exceptions have been created.
+    public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
+        /* TODO: Update exception being thrown once custom exceptions have been created.
             08/28/24 16:41
          */
-        Employee employee = selectedEmployee.orElseThrow(RuntimeException::new);
-        Integer totalLeaveCredits = updatedTotalLeaveCredits.orElseThrow(RuntimeException::new);
-        employee.setTotalLeaves(totalLeaveCredits);
+        selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
-        return new UpdateEmployeeResponse(employee);
+        return employeeRepository.save(selectedEmployee);
     }
 }
