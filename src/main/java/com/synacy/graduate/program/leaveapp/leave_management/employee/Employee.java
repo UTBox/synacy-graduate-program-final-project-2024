@@ -2,10 +2,13 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Getter
+@NoArgsConstructor
 public class Employee {
 
     @Id
@@ -13,6 +16,7 @@ public class Employee {
     @SequenceGenerator(name = "employee_sequence", sequenceName = "employee_sequence", allocationSize = 1)
     private Long id;
 
+    @NotNull
     @Setter private String firstName;
     @Setter private String lastName;
 
@@ -22,7 +26,7 @@ public class Employee {
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
-    private Employee Manager;
+    private Employee manager;
 
     @Setter
     private Integer totalLeaves;

@@ -5,7 +5,7 @@ import lombok.Getter;
 public enum EmployeeRole {
     EMPLOYEE("Employee"),
     MANAGER("Manager"),
-    HR_ADMIN("HR Admin");
+    ADMIN("Admin");
 
     @Getter
     private String name;
