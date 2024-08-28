@@ -1,13 +1,42 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import spock.lang.Specification
 
 
 class EmployeeControllerSpec extends Specification {
     EmployeeController employeeController
     EmployeeService employeeService = Mock()
+
     def setup(){
         employeeController = new EmployeeController(employeeService)
+    }
+
+    def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"(){
+        given:
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+
+        employeeService.createEmployee(createEmployeeRequest) >> {throw new ResourceNotFoundException()}
+
+        when:
+        employeeController.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(InvalidRequestException)
+    }
+
+    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID is not a manager"(){
+        given:
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+
+        employeeService.createEmployee(createEmployeeRequest) >> {throw new NotManagerException()}
+
+        when:
+        employeeController.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(InvalidRequestException)
     }
 
     def "createEmployee should create and save an employee based on the given details"(){
@@ -15,6 +44,7 @@ class EmployeeControllerSpec extends Specification {
         Long id = 2
         String firstName = "John"
         String lastName = "Dela Cruz"
+        String employeeName = "John Dela Cruz"
         EmployeeRole role = EmployeeRole.EMPLOYEE
         Long managerId = 1
         Integer totalLeaves = 25
@@ -50,8 +80,7 @@ class EmployeeControllerSpec extends Specification {
 
         then:
         id == response.getId()
-        firstName == response.getFirstName()
-        lastName == response.getLastName()
+        employeeName == response.getEmployeeName()
         role == response.getRole()
         totalLeaves == response.getTotalLeaves()
         availableLeaves == response.getAvailableLeaves()
@@ -65,6 +94,7 @@ class EmployeeControllerSpec extends Specification {
         Long id = 2
         String firstName = "John"
         String lastName = "Dela Cruz"
+        String employeeName = "John Dela Cruz"
         EmployeeRole role = EmployeeRole.EMPLOYEE
         Integer totalLeaves = 25
         Integer availableLeaves = 25
@@ -91,8 +121,7 @@ class EmployeeControllerSpec extends Specification {
 
         then:
         id == response.getId()
-        firstName == response.getFirstName()
-        lastName == response.getLastName()
+        employeeName == response.getEmployeeName()
         role == response.getRole()
         totalLeaves == response.getTotalLeaves()
         availableLeaves == response.getAvailableLeaves()

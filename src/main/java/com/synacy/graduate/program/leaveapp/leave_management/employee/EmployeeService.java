@@ -1,5 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -8,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EmployeeService {
@@ -37,7 +39,14 @@ public class EmployeeService {
         if(createEmployeeRequest.getManagerId() == null) {
             employee.setManager(null);
         } else {
-            employee.setManager(employeeRepository.findById(createEmployeeRequest.getManagerId()).get());
+            Employee manager = employeeRepository.findById(createEmployeeRequest.getManagerId())
+                    .orElseThrow(ResourceNotFoundException::new);
+
+            if(manager.getRole() != EmployeeRole.MANAGER){
+                throw new NotManagerException();
+            }
+
+            employee.setManager(manager);
         }
 
         employee.setIsDeleted(false);

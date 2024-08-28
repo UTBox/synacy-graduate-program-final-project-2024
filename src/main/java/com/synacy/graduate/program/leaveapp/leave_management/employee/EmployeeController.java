@@ -1,6 +1,8 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -36,23 +38,30 @@ public class EmployeeController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/api/v1/employee")
     public EmployeeResponse createEmployee(@RequestBody @Valid CreateEmployeeRequest createEmployeeRequest) {
-        Employee employee = employeeService.createEmployee(createEmployeeRequest);
-        return new EmployeeResponse(employee);
-    }
-
-    @PutMapping("api/v1/employee/{id}")
-    public UpdateEmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
-        /*
-            TODO: Update exception being thrown once custom exceptions have been created.
-             8/28/24 21:25
-         */
-        try {
-            Employee employee = getEmployee(id).orElseThrow(RuntimeException::new);
-
-            return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
-        } catch (RuntimeException e) {
-            throw new RuntimeException();
+        try{
+            Employee employee = employeeService.createEmployee(createEmployeeRequest);
+            return new EmployeeResponse(employee);
+        } catch (ResourceNotFoundException e) {
+            throw new InvalidRequestException("Provided manager does not exist.");
+        } catch (NotManagerException e){
+            throw new InvalidRequestException("Provided manager does not have a Manager role.");
         }
     }
+
+//    @PutMapping("api/v1/employee/{id}")
+//    public UpdateEmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+//        /*
+//            TODO: Update exception being thrown once custom exceptions have been created.
+//             8/28/24 21:25
+//         */
+//        try {
+//
+//            Employee employee = getEmployee(id).orElseThrow(RuntimeException::new);
+//
+//            return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
+//        } catch (RuntimeException e) {
+//            throw new RuntimeException();
+//        }
+//    }
 
 }

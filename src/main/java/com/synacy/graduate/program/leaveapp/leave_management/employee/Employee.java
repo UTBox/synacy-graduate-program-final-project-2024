@@ -53,5 +53,6 @@ public class Employee {
         this.role = role;
         this.totalLeaves = totalLeaves;
         this.availableLeaves = totalLeaves;
+        this.isDeleted = false;
     }
 }

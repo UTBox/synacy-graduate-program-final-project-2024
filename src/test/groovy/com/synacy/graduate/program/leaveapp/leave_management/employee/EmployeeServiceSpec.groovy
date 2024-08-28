@@ -1,14 +1,70 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import spock.lang.Specification
 
 
 class EmployeeServiceSpec extends Specification {
     EmployeeService employeeService;
+    List<Employee> employeesList = Mock();
     EmployeeRepository employeeRepository = Mock();
 
     def setup(){
-        employeeService = new EmployeeService(employeeRepository)
+        employeeService = new EmployeeService(employeesList, employeeRepository)
+    }
+
+    def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"(){
+        given:
+        String firstName = "John"
+        String lastName = "Dela Cruz"
+        EmployeeRole role = EmployeeRole.EMPLOYEE
+        Long managerId = 1
+        Integer totalLeaves = 25
+
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+        createEmployeeRequest.getFirstName() >> firstName
+        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getManagerId() >> managerId
+        createEmployeeRequest.getTotalLeaves() >> totalLeaves
+
+        employeeRepository.findById(managerId) >> Optional.empty()
+
+        when:
+        employeeService.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "createEmployee should throw a NotManagerException when the given employee associated with the manager ID is not a manager"(){
+        given:
+        String firstName = "John"
+        String lastName = "Dela Cruz"
+        EmployeeRole role = EmployeeRole.EMPLOYEE
+        Long managerId = 1
+        Integer totalLeaves = 25
+
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+        createEmployeeRequest.getFirstName() >> firstName
+        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getManagerId() >> managerId
+        createEmployeeRequest.getTotalLeaves() >> totalLeaves
+
+        Employee manager = Mock()
+        manager.getRole() >> managerRole
+
+        employeeRepository.findById(managerId) >> Optional.of(manager)
+
+        when:
+        employeeService.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(NotManagerException)
+
+        where:
+        managerRole << [EmployeeRole.EMPLOYEE, EmployeeRole.HR_ADMIN]
     }
 
     def "createEmployee should create and save an employee based on the given details"(){
@@ -29,7 +85,9 @@ class EmployeeServiceSpec extends Specification {
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
 
         Employee manager = Mock()
+        manager.getRole() >> EmployeeRole.MANAGER
         employeeRepository.findById(managerId) >> Optional.of(manager)
+
         when:
         employeeService.createEmployee(createEmployeeRequest)
 
@@ -75,5 +133,7 @@ class EmployeeServiceSpec extends Specification {
             assert isDeleted == employee.getIsDeleted()
         }
     }
+
+
 
 }
