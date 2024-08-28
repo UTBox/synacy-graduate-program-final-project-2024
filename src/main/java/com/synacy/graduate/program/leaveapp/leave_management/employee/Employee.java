@@ -22,7 +22,7 @@ public class Employee {
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
-    private Employee Manager;
+    private Employee manager;
 
     @Setter
     private Integer totalLeaves;
