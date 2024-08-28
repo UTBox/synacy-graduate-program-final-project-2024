@@ -26,6 +26,12 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(InvalidRequestException.class)
+    public ApiErrorResponse handleInvalidRequestException(InvalidRequestException e) {
+        return new ApiErrorResponse("INVALID_REQUEST", e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ApiErrorResponse handleHandlerMethodValidationException(HandlerMethodValidationException e) {
 
