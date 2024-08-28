@@ -21,7 +21,7 @@ public class Employee {
     private EmployeeRole role;
 
     @Setter
-    @OneToOne(targetEntity = Employee.class)
+    @ManyToOne(targetEntity = Employee.class)
     private Employee Manager;
 
     @Setter
