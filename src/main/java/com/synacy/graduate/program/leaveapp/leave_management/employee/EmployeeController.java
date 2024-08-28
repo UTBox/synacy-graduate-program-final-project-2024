@@ -1,6 +1,7 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,13 @@ public class EmployeeController {
                 .collect(Collectors.toList());
 
         return new PageResponse<>(employeeCount, page, employeeResponseList);
+    }
+
+    @GetMapping("/api/v1/employee/{id}")
+    public EmployeeResponse getEmployee(@PathVariable(name = "id") Long id) {
+        Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+
+        return new EmployeeResponse(employee);
     }
 
     @PutMapping("api/v1/employee/{id}")
