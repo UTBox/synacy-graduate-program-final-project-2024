@@ -7,15 +7,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.List;
 
 @Service
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
+    private final List<Employee> employeesList;
 
     @Autowired
-    public EmployeeService(EmployeeRepository employeeRepository) {
+    public EmployeeService(List<Employee> employeesList, EmployeeRepository employeeRepository) {
+        this.employeesList = employeesList;
         this.employeeRepository = employeeRepository;
+        createInitialEmployees();
     }
 
     public Page<Employee> getEmployees(int max, int page) {
@@ -30,5 +33,9 @@ public class EmployeeService {
         selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
         return employeeRepository.save(selectedEmployee);
+    }
+
+    private void createInitialEmployees() {
+        employeeRepository.saveAll(employeesList);
     }
 }

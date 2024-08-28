@@ -27,7 +27,7 @@ public class Employee {
     private EmployeeRole role;
 
     @Setter
-    @ManyToOne(targetEntity = Employee.class)
+    @ManyToOne
     @JoinColumn(name = "manager_id")
     private Employee manager;
 
@@ -45,11 +45,11 @@ public class Employee {
     public Employee() {
     }
 
-    public Employee(String firstName, String lastName, EmployeeRole role, Employee manager, Integer totalLeaves) {
+    public Employee(Long id, String firstName, String lastName, EmployeeRole role, Integer totalLeaves) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
-        this.manager = manager;
         this.totalLeaves = totalLeaves;
         this.availableLeaves = totalLeaves;
     }
