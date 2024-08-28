@@ -67,11 +67,31 @@ class EmployeeServiceSpec extends Specification {
         managerRole << [EmployeeRole.EMPLOYEE, EmployeeRole.HR_ADMIN]
     }
 
-    def "createEmployee should create and save an employee based on the given details"(){
+    def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"(){
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
         EmployeeRole role = EmployeeRole.EMPLOYEE
+        Integer totalLeaves = 25
+
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+        createEmployeeRequest.getFirstName() >> firstName
+        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getManagerId() >> null
+        createEmployeeRequest.getTotalLeaves() >> totalLeaves
+
+        when:
+        employeeService.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(NoManagerException)
+    }
+
+    def "createEmployee should create and save an employee with #role role based on the given employee details and manager ID"(){
+        given:
+        String firstName = "John"
+        String lastName = "Dela Cruz"
         Long managerId = 1
         Integer totalLeaves = 25
         Integer availableLeaves = 25
@@ -101,13 +121,15 @@ class EmployeeServiceSpec extends Specification {
             assert manager == employee.getManager()
             assert isDeleted == employee.getIsDeleted()
         }
+
+        where:
+        role << [EmployeeRole.MANAGER, EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
     }
 
-    def "createEmployee should create and save an employee with no manager when provided with details without a manager"(){
+    def "createEmployee should create and save an employee with a #role role and no manager when provided with details without a manager"(){
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
-        EmployeeRole role = EmployeeRole.EMPLOYEE
         Integer totalLeaves = 25
         Integer availableLeaves = 25
         Boolean isDeleted = false
@@ -132,8 +154,7 @@ class EmployeeServiceSpec extends Specification {
             assert null == employee.getManager()
             assert isDeleted == employee.getIsDeleted()
         }
+        where:
+        role << [EmployeeRole.MANAGER, EmployeeRole.HR_ADMIN]
     }
-
-
-
 }

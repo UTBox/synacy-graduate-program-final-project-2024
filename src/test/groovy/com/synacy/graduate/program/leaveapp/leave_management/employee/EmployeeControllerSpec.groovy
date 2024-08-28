@@ -39,6 +39,19 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
+    def "createEmployee should throw an InvalidRequestException when the employee to be created has an EMPLOYEE role but no manager is provided"(){
+        given:
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+
+        employeeService.createEmployee(createEmployeeRequest) >> {throw new NoManagerException()}
+
+        when:
+        employeeController.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(InvalidRequestException)
+    }
+
     def "createEmployee should create and save an employee based on the given details"(){
         given:
         Long id = 2

@@ -9,7 +9,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class EmployeeService {
@@ -37,12 +36,13 @@ public class EmployeeService {
         employee.setAvailableLeaves(createEmployeeRequest.getTotalLeaves());
 
         if(createEmployeeRequest.getManagerId() == null) {
-            employee.setManager(null);
+            handleNullManager(employee, createEmployeeRequest);
         } else {
             Employee manager = employeeRepository.findById(createEmployeeRequest.getManagerId())
                     .orElseThrow(ResourceNotFoundException::new);
 
-            if(manager.getRole() != EmployeeRole.MANAGER){
+            boolean isNotManager = manager.getRole() != EmployeeRole.MANAGER;
+            if(isNotManager){
                 throw new NotManagerException();
             }
 
@@ -50,7 +50,6 @@ public class EmployeeService {
         }
 
         employee.setIsDeleted(false);
-
         return employeeRepository.save(employee);
     }
 
@@ -65,5 +64,13 @@ public class EmployeeService {
 
     private void createInitialEmployees() {
         employeeRepository.saveAll(employeesList);
+    }
+
+    private void handleNullManager(Employee employee, CreateEmployeeRequest createEmployeeRequest) {
+        if(createEmployeeRequest.getRole() == EmployeeRole.EMPLOYEE) {
+            throw new NoManagerException();
+        }
+
+        employee.setManager(null);
     }
 }
