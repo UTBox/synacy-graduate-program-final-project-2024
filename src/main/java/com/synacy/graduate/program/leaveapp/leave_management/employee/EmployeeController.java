@@ -16,7 +16,7 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @GetMapping("api/v1/employees")
+    @GetMapping("/api/v1/employee")
     public PageResponse<EmployeeResponse> getEmployees(
             @RequestParam(name = "max", defaultValue = "2") Integer max,
             @RequestParam(name = "page", defaultValue = "1") Integer page) {
