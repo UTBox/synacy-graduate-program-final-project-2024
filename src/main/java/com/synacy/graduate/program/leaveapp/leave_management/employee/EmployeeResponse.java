@@ -5,17 +5,15 @@ import lombok.Getter;
 @Getter
 public class EmployeeResponse {
     private final Long id;
-    private final String firstName;
-    private final String lastName;
+    private final String employeeName;
     private final EmployeeRole role;
-    private final Integer totalLeaves;
-    private final Integer availableLeaves;
     private final ManagerResponse manager;
+    private final int totalLeaves;
+    private final int availableLeaves;
 
-    EmployeeResponse(Employee employee) {
+    public EmployeeResponse(Employee employee) {
         this.id = employee.getId();
-        this.firstName = employee.getFirstName();
-        this.lastName = employee.getLastName();
+        this.employeeName = employee.getFirstName() + " " + employee.getLastName();
         this.role = employee.getRole();
         this.totalLeaves = employee.getTotalLeaves();
         this.availableLeaves = employee.getAvailableLeaves();

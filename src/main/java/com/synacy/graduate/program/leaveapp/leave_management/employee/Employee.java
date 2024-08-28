@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.validation.constraints.NotNull;
 
-@Entity
 @Getter
 @NoArgsConstructor
+@Entity(name = "employee")
 public class Employee {
 
     @Id
@@ -16,24 +16,42 @@ public class Employee {
     @SequenceGenerator(name = "employee_sequence", sequenceName = "employee_sequence", allocationSize = 1)
     private Long id;
 
-    @NotNull
-    @Setter private String firstName;
-    @Setter private String lastName;
+    @Setter
+    @Column(nullable = false)
+    private String firstName;
 
     @Setter
+    @Column(nullable = false)
+    private String lastName;
+
+    @Setter
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private EmployeeRole role;
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
+    @JoinColumn(name = "manager_id")
     private Employee manager;
 
     @Setter
+    @Column(nullable = false)
     private Integer totalLeaves;
 
     @Setter
+    @Column(nullable = false)
     private Integer availableLeaves;
 
     @Setter
+    @Column(nullable = false)
     private Boolean isDeleted;
+
+    public Employee(Long id, String firstName, String lastName, EmployeeRole role, Integer totalLeaves) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.role = role;
+        this.totalLeaves = totalLeaves;
+        this.availableLeaves = totalLeaves;
+    }
 }
