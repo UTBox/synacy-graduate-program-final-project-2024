@@ -15,8 +15,8 @@ import java.util.Objects;
 public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({ResourceNotFoundException.class})
-    public ApiErrorResponse handleResourceNotFoundException(ResourceNotFoundException e) {
-        return new ApiErrorResponse("RESOURCE_NOT_FOUND", e.getErrorMessage());
+    public ApiErrorResponse handleResourceNotFoundException() {
+        return new ApiErrorResponse("RESOURCE_NOT_FOUND", "The target resource does not exist");
     }
 
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
