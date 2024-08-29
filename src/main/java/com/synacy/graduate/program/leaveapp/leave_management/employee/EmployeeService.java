@@ -3,10 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +28,10 @@ public class EmployeeService {
 
     public Optional<Employee> getEmployeeById(Long employeeId) {
         return employeeRepository.findById(employeeId);
+    }
+
+    public List<Employee> getManagers(){
+        return employeeRepository.findFirst10ByRoleAndIsDeletedIsFalse(EmployeeRole.MANAGER, Sort.by("id"));
     }
 
     public Employee createEmployee(CreateEmployeeRequest createEmployeeRequest) {

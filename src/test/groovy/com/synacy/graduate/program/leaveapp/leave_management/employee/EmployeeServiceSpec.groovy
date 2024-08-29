@@ -2,6 +2,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Sort
 import spock.lang.Specification
 
 
@@ -12,6 +13,28 @@ class EmployeeServiceSpec extends Specification {
 
     def setup(){
         employeeService = new EmployeeService(employeesList, employeeRepository)
+    }
+
+    def "getManager should return the first 10 list of managers"(){
+        given:
+        Long id1 = 1
+        Long id2 = 2
+        EmployeeRole role = EmployeeRole.MANAGER
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<Employee> managersResponse = employeeService.getManagers();
+
+        then:
+        1 * employeeRepository.findFirst10ByRoleAndIsDeletedIsFalse(role, Sort.by("id")) >> managersList
+        managersList == managersResponse
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"(){

@@ -3,6 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Sort
 import spock.lang.Specification
 
 
@@ -12,6 +13,42 @@ class EmployeeControllerSpec extends Specification {
 
     def setup(){
         employeeController = new EmployeeController(employeeService)
+    }
+
+    def "getManagers should return the first 10 list of managers"(){
+        given:
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+
+        Long id2 = 2
+        String firstName2 = "Juan"
+        String lastName2 = "Doh"
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+        manager1.getFirstName() >> firstName1
+        manager1.getLastName() >> lastName1
+
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+        manager2.getFirstName() >> firstName2
+        manager2.getLastName() >> lastName2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<ManagerResponse> managersResponse = employeeController.getManager()
+
+        then:
+        1 * employeeService.getManagers() >> managersList
+        id1 == managersResponse[0].getId()
+        firstName1 == managersResponse[0].getFirstName()
+        lastName1 == managersResponse[0].getLastName()
+        id2 == managersResponse[1].getId()
+        firstName2 == managersResponse[1].getFirstName()
+        lastName2 == managersResponse[1].getLastName()
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"(){

@@ -5,6 +5,7 @@ import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.Invali
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
+import org.apache.catalina.Manager;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,14 @@ public class EmployeeController {
         Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         return new EmployeeResponse(employee);
+    }
+
+    @GetMapping("/api/v1/manager")
+    public List<ManagerResponse> getManager(){
+        List<Employee> managersList = employeeService.getManagers();
+        return managersList.stream()
+                .map(ManagerResponse::new)
+                .collect(Collectors.toList());
     }
 
     @ResponseStatus(HttpStatus.CREATED)
