@@ -14,6 +14,23 @@ class EmployeeControllerSpec extends Specification {
         employeeController = new EmployeeController(employeeService)
     }
 
+    def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"(){
+        given:
+        String errorCode = "HR_ADMIN_CREATION"
+        String errorMessage = "Cannot create an HR Admin employee"
+
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+
+        employeeService.createEmployee(createEmployeeRequest) >> {throw new InvalidOperationException(errorCode, errorMessage)}
+
+        when:
+        employeeController.createEmployee(createEmployeeRequest)
+
+        then:
+        InvalidOperationException e = thrown(InvalidOperationException)
+        errorCode == e.errorCode
+    }
+
     def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"(){
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
@@ -27,7 +44,7 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID is not a manager"(){
+    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID cannot be a manager to the created employee"(){
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
