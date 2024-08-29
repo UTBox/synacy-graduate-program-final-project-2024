@@ -43,6 +43,27 @@ class EmployeeServiceSpec extends Specification {
         employeesList[0].totalLeaves == result.content[0].totalLeaves
         employeesList[0].availableLeaves == result.content[0].availableLeaves
     }
+
+    def "getEmployeeById should return an employee with the given id"() {
+        given:
+        Long id = 1
+
+        Employee employee = Mock(Employee)
+        employee.id >> id
+        employee.firstName >> "John"
+        employee.lastName >> "Doe"
+        employee.role >> EmployeeRole.EMPLOYEE
+        employee.totalLeaves >> 15
+
+        when:
+        Optional<Employee> result = employeeService.getEmployeeById(id)
+
+        then:
+        1 * employeeRepository.findById(id) >> Optional.of(employee)
+        employee == result.get()
+    }
+
+    def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -52,7 +73,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -66,7 +87,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "createEmployee should throw a NotManagerException when the given employee associated with the manager ID is not a manager"(){
+    def "createEmployee should throw a NotManagerException when the given employee associated with the manager ID is not a manager"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -76,7 +97,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -96,7 +117,7 @@ class EmployeeServiceSpec extends Specification {
         managerRole << [EmployeeRole.EMPLOYEE, EmployeeRole.HR_ADMIN]
     }
 
-    def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"(){
+    def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -105,7 +126,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> null
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -117,7 +138,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(NoManagerException)
     }
 
-    def "createEmployee should create and save an employee with #role role based on the given employee details and manager ID"(){
+    def "createEmployee should create and save an employee with #role role based on the given employee details and manager ID"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -128,7 +149,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -141,7 +162,7 @@ class EmployeeServiceSpec extends Specification {
         employeeService.createEmployee(createEmployeeRequest)
 
         then:
-        1 * employeeRepository.save(_ as Employee) >> {Employee employee ->
+        1 * employeeRepository.save(_ as Employee) >> { Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
             assert role == employee.getRole()
@@ -155,7 +176,7 @@ class EmployeeServiceSpec extends Specification {
         role << [EmployeeRole.MANAGER, EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
     }
 
-    def "createEmployee should create and save an employee with a #role role and no manager when provided with details without a manager"(){
+    def "createEmployee should create and save an employee with a #role role and no manager when provided with details without a manager"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -165,7 +186,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> null
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -174,7 +195,7 @@ class EmployeeServiceSpec extends Specification {
         employeeService.createEmployee(createEmployeeRequest)
 
         then:
-        1 * employeeRepository.save(_) >> {Employee employee ->
+        1 * employeeRepository.save(_) >> { Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
             assert role == employee.getRole()
