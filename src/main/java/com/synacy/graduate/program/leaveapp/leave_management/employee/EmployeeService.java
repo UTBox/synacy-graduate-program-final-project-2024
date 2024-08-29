@@ -43,7 +43,7 @@ public class EmployeeService {
         if(createEmployeeRequest.getManagerId() == null) {
             handleNullManager(employee, createEmployeeRequest);
         } else {
-            Employee manager = employeeRepository.findById(createEmployeeRequest.getManagerId())
+            Employee manager = employeeRepository.findByIdAndIsDeletedIsFalse(createEmployeeRequest.getManagerId())
                     .orElseThrow(ResourceNotFoundException::new);
 
             boolean isNotManager = manager.getRole() != EmployeeRole.MANAGER;
