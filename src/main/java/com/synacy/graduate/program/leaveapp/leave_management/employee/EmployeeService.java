@@ -32,9 +32,6 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        /* TODO: Update exception being thrown once custom exceptions have been created.
-            08/28/24 16:41
-         */
         selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
         return employeeRepository.save(selectedEmployee);

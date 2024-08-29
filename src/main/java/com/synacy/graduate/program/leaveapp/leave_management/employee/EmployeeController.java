@@ -40,10 +40,6 @@ public class EmployeeController {
 
     @PutMapping("api/v1/employee/{id}")
     public UpdateEmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
-        /*
-            TODO: Update exception being thrown once custom exceptions have been created.
-             8/28/24 21:25
-         */
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
