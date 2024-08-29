@@ -1,5 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import spock.lang.Specification
@@ -153,5 +154,27 @@ class EmployeeControllerSpec extends Specification {
 
         then:
         thrown(ResourceNotFoundException)
+    }
+
+    def "updateEmployee should throw InvalidOperationException if updatedTotalLeaves is less than availableLeaves"() {
+        given:
+        Long id = 1L
+        Integer updatedTotalLeaves = 15
+        Integer availableLeaves = 25
+
+        UpdateEmployeeRequest updateEmployeeRequest = Mock()
+        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
+
+        Employee employee = Mock()
+        employee.getAvailableLeaves() >> availableLeaves
+
+        employeeService.getEmployeeById(id) >> Optional.of(employee)
+        employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new InvalidUpdatedTotalLeavesException() }
+
+        when:
+        employeeController.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        thrown(InvalidOperationException)
     }
 }
