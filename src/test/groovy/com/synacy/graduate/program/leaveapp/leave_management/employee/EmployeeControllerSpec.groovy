@@ -1,7 +1,9 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Page
 import spock.lang.Specification
 
 
@@ -9,11 +11,46 @@ class EmployeeControllerSpec extends Specification {
     EmployeeController employeeController
     EmployeeService employeeService = Mock()
 
-    def setup(){
+    def setup() {
         employeeController = new EmployeeController(employeeService)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"(){
+    def "getEmployees should return a paged response of employees when max and page parameters are valid"() {
+        given:
+        int max = 2
+        int page = 1
+        int totalCount = 1
+
+        Employee employee = Mock(Employee) {
+            id >> 1L
+            firstName >> "John"
+            lastName >> "Wick"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+
+        List<Employee> employeesList = [employee]
+        Page<Employee> paginatedEmployees = Mock(Page) {
+            content >> employeesList
+            totalElements >> totalCount
+        }
+
+        employeeService.getEmployees(max, page) >> paginatedEmployees
+
+        when:
+        PageResponse<EmployeeResponse> result = employeeController.getEmployees(max, page)
+
+        then:
+        totalCount == result.totalCount()
+        page == result.pageNumber()
+        employeesList[0].id == result.content()[0].id
+        employeesList[0].firstName == result.content()[0].firstName
+        employeesList[0].lastName == result.content()[0].lastName
+        employeesList[0].role == result.content()[0].role
+        employeesList[0].totalLeaves == result.content()[0].totalLeaves
+        employeesList[0].availableLeaves == result.content()[0].availableLeaves
+    }
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
