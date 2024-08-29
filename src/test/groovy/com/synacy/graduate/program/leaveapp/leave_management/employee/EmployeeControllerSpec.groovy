@@ -140,4 +140,18 @@ class EmployeeControllerSpec extends Specification {
         availableLeaves == response.getAvailableLeaves()
         null == response.getManager()
     }
+
+    def "updateEmployee should throw ResourceNotFoundException if employee id is not found"() {
+        given:
+        Long id = 5L
+        UpdateEmployeeRequest updateEmployeeRequest = Mock()
+
+        employeeService.getEmployeeById(id) >> Optional.empty()
+
+        when:
+        employeeController.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
 }
