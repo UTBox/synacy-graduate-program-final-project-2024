@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EmployeeService {
@@ -26,10 +27,11 @@ public class EmployeeService {
         return employeeRepository.findAll(pageable);
     }
 
+    public Optional<Employee> getEmployeeById(Long employeeId) {
+        return employeeRepository.findById(employeeId);
+    }
+
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        /* TODO: Update exception being thrown once custom exceptions have been created.
-            08/28/24 16:41
-         */
         selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
         return employeeRepository.save(selectedEmployee);
