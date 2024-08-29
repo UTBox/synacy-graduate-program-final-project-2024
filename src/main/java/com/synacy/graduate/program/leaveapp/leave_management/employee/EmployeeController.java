@@ -19,7 +19,7 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @GetMapping("api/v1/employees")
+    @GetMapping("/api/v1/employee")
     public PageResponse<EmployeeResponse> getEmployees(
             @RequestParam(name = "max", defaultValue = "2") Integer max,
             @RequestParam(name = "page", defaultValue = "1") Integer page) {
@@ -34,6 +34,12 @@ public class EmployeeController {
         return new PageResponse<>(employeeCount, page, employeeResponseList);
     }
 
+    @GetMapping("/api/v1/employee/{id}")
+    public EmployeeResponse getEmployee(@PathVariable(name = "id") Long id) {
+        Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+
+        return new EmployeeResponse(employee);
+    }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/api/v1/employee")
@@ -50,20 +56,15 @@ public class EmployeeController {
         }
     }
 
-//    @PutMapping("api/v1/employee/{id}")
-//    public UpdateEmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
-//        /*
-//            TODO: Update exception being thrown once custom exceptions have been created.
-//             8/28/24 21:25
-//         */
-//        try {
-//
-//            Employee employee = getEmployee(id).orElseThrow(RuntimeException::new);
-//
-//            return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
-//        } catch (RuntimeException e) {
-//            throw new RuntimeException();
-//        }
-//    }
+    @PutMapping("api/v1/employee/{id}")
+    public UpdateEmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+        Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
+        try {
+            Employee employee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
+            return new UpdateEmployeeResponse(employee);
+        } catch (RuntimeException e) {
+            throw new RuntimeException();
+        }
+    }
 }
