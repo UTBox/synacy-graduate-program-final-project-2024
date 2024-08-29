@@ -1,6 +1,7 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Page
 import spock.lang.Specification
 
 
@@ -9,11 +10,39 @@ class EmployeeServiceSpec extends Specification {
     List<Employee> employeesList = Mock();
     EmployeeRepository employeeRepository = Mock();
 
-    def setup(){
+    def setup() {
         employeeService = new EmployeeService(employeesList, employeeRepository)
     }
 
-    def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"(){
+    def "getEmployees should return a page of non-deleted employees given max and page number"() {
+        given:
+        Employee employee = Mock(Employee) {
+            id >> 1L
+            firstName >> "John"
+            lastName >> "Doe"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+        List<Employee> employeesList = [employee]
+        Page<Employee> paginatedEmployees = Mock(Page)
+        paginatedEmployees.content >> employeesList
+
+        int max = 2
+        int page = 1
+
+        when:
+        Page<Employee> result = employeeService.getEmployees(max, page)
+
+        then:
+        1 * employeeRepository.findAllByIsDeletedIsFalse(_) >> paginatedEmployees
+        employeesList[0].id == result.content[0].id
+        employeesList[0].firstName == result.content[0].firstName
+        employeesList[0].lastName == result.content[0].lastName
+        employeesList[0].role == result.content[0].role
+        employeesList[0].totalLeaves == result.content[0].totalLeaves
+        employeesList[0].availableLeaves == result.content[0].availableLeaves
+    }
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
