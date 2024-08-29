@@ -142,6 +142,48 @@ class EmployeeControllerSpec extends Specification {
         null == response.getManager()
     }
 
+    def "updateEmployee should call EmployeeService updateEmployee and return an EmployeeResponse with updated employee totalLeaves"() {
+        given:
+        Long id = 1
+        Integer updatedTotalLeaves = 20
+        String firstName = "John"
+        String lastName = "Doe"
+        EmployeeRole role = EmployeeRole.EMPLOYEE
+        Employee manager = Mock()
+        Integer totalLeaves = 15
+        Integer availableLeaves = 12
+        Boolean isDeleted = false
+
+        UpdateEmployeeRequest updateEmployeeRequest = Mock()
+
+        Employee employee = Mock()
+        employee.getId() >> id
+        employee.getTotalLeaves() >> totalLeaves
+
+        employeeService.getEmployeeById(id) >> Optional.of(employee)
+
+        Employee updatedEmployee = Mock()
+        updatedEmployee.getId() >> id
+        updatedEmployee.getFirstName() >> firstName
+        updatedEmployee.getLastName() >> lastName
+        updatedEmployee.getRole() >> role
+        updatedEmployee.getTotalLeaves() >> updatedTotalLeaves
+        updatedEmployee.getAvailableLeaves() >> availableLeaves
+        updatedEmployee.getManager() >> manager
+        updatedEmployee.getIsDeleted() >> isDeleted
+
+        when:
+        EmployeeResponse employeeResponse = employeeController.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        1 * employeeService.updateEmployee(employee, updateEmployeeRequest) >> updatedEmployee
+        id == employeeResponse.getId()
+        (firstName + " " + lastName) == employeeResponse.getEmployeeName()
+        role == employeeResponse.getRole()
+        updatedTotalLeaves == employeeResponse.getTotalLeaves()
+        availableLeaves == employeeResponse.getAvailableLeaves()
+    }
+
     def "updateEmployee should throw ResourceNotFoundException if employee id is not found"() {
         given:
         Long id = 5L
