@@ -62,8 +62,8 @@ public class EmployeeController {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
-            Employee employee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
-            return new EmployeeResponse(employee);
+            Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
+            return new EmployeeResponse(updatedEmployee);
         } catch (InvalidUpdatedTotalLeavesException e) {
             throw new InvalidOperationException("INVALID_TOTAL_LEAVES", "Cannot set total leave credits less than available leave credits.");
         }
