@@ -2,9 +2,12 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
 
 @Getter
+@NoArgsConstructor
 @Entity(name = "employee")
 public class Employee {
 
@@ -27,7 +30,7 @@ public class Employee {
     private EmployeeRole role;
 
     @Setter
-    @ManyToOne
+    @ManyToOne(targetEntity = Employee.class)
     @JoinColumn(name = "manager_id")
     private Employee manager;
 
@@ -40,10 +43,8 @@ public class Employee {
     private Integer availableLeaves;
 
     @Setter
+    @Column(nullable = false)
     private Boolean isDeleted;
-
-    public Employee() {
-    }
 
     public Employee(Long id, String firstName, String lastName, EmployeeRole role, Integer totalLeaves) {
         this.id = id;
@@ -52,5 +53,6 @@ public class Employee {
         this.role = role;
         this.totalLeaves = totalLeaves;
         this.availableLeaves = totalLeaves;
+        this.isDeleted = false;
     }
 }

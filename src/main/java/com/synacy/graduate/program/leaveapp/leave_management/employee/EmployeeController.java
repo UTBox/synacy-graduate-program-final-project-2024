@@ -1,8 +1,11 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +39,21 @@ public class EmployeeController {
         Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         return new EmployeeResponse(employee);
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/api/v1/employee")
+    public EmployeeResponse createEmployee(@RequestBody @Valid CreateEmployeeRequest createEmployeeRequest) {
+        try{
+            Employee employee = employeeService.createEmployee(createEmployeeRequest);
+            return new EmployeeResponse(employee);
+        } catch (ResourceNotFoundException e) {
+            throw new InvalidRequestException("Provided manager does not exist.");
+        } catch (NotManagerException e){
+            throw new InvalidRequestException("Provided manager does not have a Manager role.");
+        } catch (NoManagerException e){
+            throw new InvalidRequestException("No manager provided.");
+        }
     }
 
     @PutMapping("api/v1/employee/{id}")
