@@ -31,7 +31,10 @@ public class EmployeeService {
     }
 
     public List<Employee> getManagers(){
-        return employeeRepository.findFirst10ByRoleAndIsDeletedIsFalse(EmployeeRole.MANAGER, Sort.by("id"));
+        return employeeRepository.findFirst10Managers();
+    }
+    public List<Employee> getManagersByName(String name) {
+        return employeeRepository.findFirst10ManagersByName(name);
     }
 
     public Employee createEmployee(CreateEmployeeRequest createEmployeeRequest) {

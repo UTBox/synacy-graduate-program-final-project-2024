@@ -15,11 +15,10 @@ class EmployeeServiceSpec extends Specification {
         employeeService = new EmployeeService(employeesList, employeeRepository)
     }
 
-    def "getManager should return the first 10 list of managers"(){
+    def "getManagers should return the first 10 list of managers"(){
         given:
         Long id1 = 1
         Long id2 = 2
-        EmployeeRole role = EmployeeRole.MANAGER
 
         Employee manager1 = Mock()
         manager1.getId() >> id1
@@ -33,7 +32,30 @@ class EmployeeServiceSpec extends Specification {
         List<Employee> managersResponse = employeeService.getManagers();
 
         then:
-        1 * employeeRepository.findFirst10ByRoleAndIsDeletedIsFalse(role, Sort.by("id")) >> managersList
+        1 * employeeRepository.findFirst10Managers() >> managersList
+        managersList == managersResponse
+    }
+
+    def "getManagersByName should return the first 10 list of managers with names that match the given filter"(){
+        given:
+        String nameFilter = "John"
+
+        Long id1 = 1
+        Long id2 = 2
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<Employee> managersResponse = employeeService.getManagersByName(nameFilter);
+
+        then:
+        1 * employeeRepository.findFirst10ManagersByName(nameFilter) >> managersList
         managersList == managersResponse
     }
 
