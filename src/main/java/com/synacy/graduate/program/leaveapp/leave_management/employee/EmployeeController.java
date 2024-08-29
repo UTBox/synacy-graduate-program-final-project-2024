@@ -30,6 +30,7 @@ public class EmployeeController {
         Page<Employee> employees = employeeService.getEmployees(max, page);
         long employeeCount = employees.getTotalElements();
         List<EmployeeResponse> employeeResponseList = employees
+                .getContent()
                 .stream()
                 .map(EmployeeResponse::new)
                 .collect(Collectors.toList());

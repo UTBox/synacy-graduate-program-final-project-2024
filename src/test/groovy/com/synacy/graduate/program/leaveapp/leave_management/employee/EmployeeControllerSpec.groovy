@@ -51,10 +51,50 @@ class EmployeeControllerSpec extends Specification {
         employeesList[0].totalLeaves == result.content()[0].totalLeaves
         employeesList[0].availableLeaves == result.content()[0].availableLeaves
     }
+
+    def "getEmployee should throw a ResourceNotFoundException when employee of given id does not exist"() {
+        given:
+        Long id = 1
+        employeeService.getEmployeeById(id) >> Optional.empty()
+
+        when:
+        employeeController.getEmployee(id)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "getEmployee should return an employee when employee of given id exists"() {
+        given:
+        Long employeeId = 1
+        Employee employee = Mock(Employee) {
+            id >> employeeId
+            firstName >> "John"
+            lastName >> "Wick"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+
+        employeeService.getEmployeeById(employeeId) >> Optional.of(employee)
+
+        when:
+        EmployeeResponse result = employeeController.getEmployee(employeeId)
+
+        then:
+        employee.id == result.id
+        employee.firstName == result.firstName
+        employee.lastName == result.lastName
+        employee.role == result.role
+        employee.totalLeaves == result.totalLeaves
+        employee.availableLeaves == result.availableLeaves
+    }
+
+    def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new ResourceNotFoundException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new ResourceNotFoundException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -63,11 +103,11 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID is not a manager"(){
+    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID is not a manager"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new NotManagerException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new NotManagerException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -76,11 +116,11 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the employee to be created has an EMPLOYEE role but no manager is provided"(){
+    def "createEmployee should throw an InvalidRequestException when the employee to be created has an EMPLOYEE role but no manager is provided"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new NoManagerException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new NoManagerException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -89,7 +129,7 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should create and save an employee based on the given details"(){
+    def "createEmployee should create and save an employee based on the given details"() {
         given:
         Long id = 2
         String firstName = "John"
@@ -102,7 +142,7 @@ class EmployeeControllerSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -139,7 +179,7 @@ class EmployeeControllerSpec extends Specification {
         managerLastName == response.getManager().getLastName()
     }
 
-    def "createEmployee should create and save an employee with no manager when provided with details without a manager"(){
+    def "createEmployee should create and save an employee with no manager when provided with details without a manager"() {
         given:
         Long id = 2
         String firstName = "John"
