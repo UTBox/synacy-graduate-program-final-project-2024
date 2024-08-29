@@ -59,6 +59,10 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
+        if (isInvalidTotalLeaveCredits(selectedEmployee, updateEmployeeRequest.getTotalLeaveCredits())) {
+            throw new InvalidUpdatedTotalLeavesException();
+        }
+
         selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
         return employeeRepository.save(selectedEmployee);
@@ -74,5 +78,9 @@ public class EmployeeService {
         }
 
         employee.setManager(null);
+    }
+
+    private boolean isInvalidTotalLeaveCredits(Employee employee, Integer updatedTotalLeaves) {
+        return updatedTotalLeaves < employee.getAvailableLeaves();
     }
 }
