@@ -1,5 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import spock.lang.Specification
 
@@ -11,6 +12,26 @@ class EmployeeServiceSpec extends Specification {
 
     def setup(){
         employeeService = new EmployeeService(employeesList, employeeRepository)
+    }
+
+    def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"(){
+        given:
+        String firstName = "John"
+        String lastName = "Dela Cruz"
+        EmployeeRole role = EmployeeRole.HR_ADMIN
+        Integer totalLeaves = 25
+
+        CreateEmployeeRequest createEmployeeRequest = Mock()
+        createEmployeeRequest.getFirstName() >> firstName
+        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getTotalLeaves() >> totalLeaves
+
+        when:
+        employeeService.createEmployee(createEmployeeRequest)
+
+        then:
+        thrown(InvalidOperationException)
     }
 
     def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"(){
@@ -28,7 +49,7 @@ class EmployeeServiceSpec extends Specification {
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
 
-        employeeRepository.findById(managerId) >> Optional.empty()
+        employeeRepository.findByIdAndIsDeletedIsFalse(managerId) >> Optional.empty()
 
         when:
         employeeService.createEmployee(createEmployeeRequest)
@@ -37,25 +58,24 @@ class EmployeeServiceSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "createEmployee should throw a NotManagerException when the given employee associated with the manager ID is not a manager"(){
+    def "createEmployee should throw a NotManagerException when assigning a manager with #managerRole role to an employee with #employeeRole role"(){
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
-        EmployeeRole role = EmployeeRole.EMPLOYEE
         Long managerId = 1
         Integer totalLeaves = 25
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
-        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getLastName() >> lastName
+        createEmployeeRequest.getRole() >> employeeRole
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
 
         Employee manager = Mock()
         manager.getRole() >> managerRole
 
-        employeeRepository.findById(managerId) >> Optional.of(manager)
+        employeeRepository.findByIdAndIsDeletedIsFalse(managerId) >> Optional.of(manager)
 
         when:
         employeeService.createEmployee(createEmployeeRequest)
@@ -64,7 +84,11 @@ class EmployeeServiceSpec extends Specification {
         thrown(NotManagerException)
 
         where:
-        managerRole << [EmployeeRole.EMPLOYEE, EmployeeRole.HR_ADMIN]
+        employeeRole           | managerRole
+        EmployeeRole.MANAGER   | EmployeeRole.EMPLOYEE
+        EmployeeRole.EMPLOYEE  | EmployeeRole.EMPLOYEE
+        EmployeeRole.EMPLOYEE  | EmployeeRole.HR_ADMIN
+
     }
 
     def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"(){
@@ -88,7 +112,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(NoManagerException)
     }
 
-    def "createEmployee should create and save an employee with #role role based on the given employee details and manager ID"(){
+    def "createEmployee should create and save an employee with #employeeRole role based on the given employee details and manager with role #managerRole"(){
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -99,14 +123,14 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
-        createEmployeeRequest.getRole() >> role
+        createEmployeeRequest.getLastName() >> lastName
+        createEmployeeRequest.getRole() >> employeeRole
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
 
         Employee manager = Mock()
-        manager.getRole() >> EmployeeRole.MANAGER
-        employeeRepository.findById(managerId) >> Optional.of(manager)
+        manager.getRole() >> managerRole
+        employeeRepository.findByIdAndIsDeletedIsFalse(managerId) >> Optional.of(manager)
 
         when:
         employeeService.createEmployee(createEmployeeRequest)
@@ -115,7 +139,7 @@ class EmployeeServiceSpec extends Specification {
         1 * employeeRepository.save(_ as Employee) >> {Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
-            assert role == employee.getRole()
+            assert employeeRole == employee.getRole()
             assert totalLeaves == employee.getTotalLeaves()
             assert availableLeaves == employee.getAvailableLeaves()
             assert manager == employee.getManager()
@@ -123,10 +147,14 @@ class EmployeeServiceSpec extends Specification {
         }
 
         where:
-        role << [EmployeeRole.MANAGER, EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
+        employeeRole           | managerRole
+        EmployeeRole.MANAGER   | EmployeeRole.MANAGER
+        EmployeeRole.MANAGER   | EmployeeRole.HR_ADMIN
+        EmployeeRole.EMPLOYEE  | EmployeeRole.MANAGER
+
     }
 
-    def "createEmployee should create and save an employee with a #role role and no manager when provided with details without a manager"(){
+    def "createEmployee should create and save a MANAGER employee with a manager with HR_ADMIN role when given an empty manager ID"(){
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -136,25 +164,28 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
-        createEmployeeRequest.getRole() >> role
-        createEmployeeRequest.getManagerId() >> null
+        createEmployeeRequest.getLastName() >> lastName
+        createEmployeeRequest.getRole() >> EmployeeRole.MANAGER
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
+
+        Long managerId = 1
+        Employee manager = Mock()
+        manager.getId() >> managerId
+        manager.getRole() >> EmployeeRole.HR_ADMIN
+        employeeRepository.findByIdAndIsDeletedIsFalse(managerId) >> Optional.of(manager)
 
         when:
         employeeService.createEmployee(createEmployeeRequest)
 
         then:
-        1 * employeeRepository.save(_) >> {Employee employee ->
+        1 * employeeRepository.save(_ as Employee) >> {Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
-            assert role == employee.getRole()
+            assert EmployeeRole.MANAGER == employee.getRole()
             assert totalLeaves == employee.getTotalLeaves()
             assert availableLeaves == employee.getAvailableLeaves()
-            assert null == employee.getManager()
+            assert manager == employee.getManager()
             assert isDeleted == employee.getIsDeleted()
         }
-        where:
-        role << [EmployeeRole.MANAGER, EmployeeRole.HR_ADMIN]
     }
 }
