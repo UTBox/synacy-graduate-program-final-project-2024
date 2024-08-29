@@ -44,10 +44,11 @@ public class EmployeeController {
             TODO: Update exception being thrown once custom exceptions have been created.
              8/28/24 21:25
          */
-        try {
-            Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+        Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
-            return new UpdateEmployeeResponse(employeeService.updateEmployee(employee, updateEmployeeRequest));
+        try {
+            Employee employee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
+            return new UpdateEmployeeResponse(employee);
         } catch (RuntimeException e) {
             throw new RuntimeException();
         }
