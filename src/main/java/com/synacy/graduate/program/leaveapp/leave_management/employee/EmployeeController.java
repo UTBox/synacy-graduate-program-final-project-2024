@@ -57,6 +57,7 @@ public class EmployeeController {
         }
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
     public EmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
