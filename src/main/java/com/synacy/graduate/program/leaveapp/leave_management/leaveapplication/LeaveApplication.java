@@ -1,4 +1,4 @@
-package com.synacy.graduate.program.leaveapp.leave_management.leave;
+package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import jakarta.persistence.*;
@@ -20,7 +20,7 @@ public class LeaveApplication {
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
-    @JoinColumn(name = "employee_id", referencedColumnName = "id")
+    @JoinColumn(name = "employee_id", referencedColumnName = "id", nullable = false)
     private Long employeeId;
 
     @Setter
@@ -47,7 +47,7 @@ public class LeaveApplication {
     @Setter
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private LeaveStatus status;
+    private LeaveApplicationStatus status;
 
     public LeaveApplication(Long id, Long employeeId, Long managerId, LocalDate startDate, LocalDate endDate, Integer workDays, String reason) {
         this.id = id;
@@ -57,6 +57,6 @@ public class LeaveApplication {
         this.endDate = endDate;
         this.workDays = workDays;
         this.reason = reason;
-        this.status = LeaveStatus.PENDING;
+        this.status = LeaveApplicationStatus.PENDING;
     }
 }

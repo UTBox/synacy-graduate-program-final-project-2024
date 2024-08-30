@@ -1,8 +1,8 @@
-package com.synacy.graduate.program.leaveapp.leave_management.leave;
+package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import lombok.Getter;
 
-public enum LeaveStatus {
+public enum LeaveApplicationStatus {
     PENDING("Pending"),
     APPROVED("Approved"),
     REJECTED("Rejected"),
@@ -10,7 +10,7 @@ public enum LeaveStatus {
 
     @Getter
     private String statusName;
-    LeaveStatus(String statusName) {
+    LeaveApplicationStatus(String statusName) {
         this.statusName = statusName;
     }
 }
