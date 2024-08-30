@@ -1,6 +1,10 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -14,6 +18,11 @@ public class LeaveApplicationService {
     @Autowired
     public LeaveApplicationService(LeaveApplicationRepository leaveApplicationRepository) {
         this.leaveApplicationRepository = leaveApplicationRepository;
+    }
+
+    Page<LeaveApplication> getAllLeaveApplications(int max, int page) {
+        Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
+        return leaveApplicationRepository.findAll(pageable);
     }
 
     void createLeaveApplication(CreateLeaveApplicationRequest createLeaveApplicationRequest) {
