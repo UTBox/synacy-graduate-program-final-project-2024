@@ -39,6 +39,11 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAllByManager(manager, pageable);
     }
 
+    Page<LeaveApplication> getAllLeaveApplications(int max, int page) {
+        Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
+        return leaveApplicationRepository.findAll(pageable);
+    }
+
     LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
         Integer leaveWorkDays = calculateLeaveWorkDays(
                 createLeaveApplicationRequest.getStartDate(),
