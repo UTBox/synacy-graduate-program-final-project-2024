@@ -1,8 +1,10 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee
 
+import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Page
 import spock.lang.Specification
 
 
@@ -12,6 +14,154 @@ class EmployeeControllerSpec extends Specification {
 
     def setup(){
         employeeController = new EmployeeController(employeeService)
+    }
+    def "getEmployees should return a paged response of employees when max and page parameters are valid"() {
+        given:
+        int max = 2
+        int page = 1
+        int totalCount = 1
+
+        Employee employee = Mock(Employee) {
+            id >> 1L
+            firstName >> "John"
+            lastName >> "Wick"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+
+        List<Employee> employeesList = [employee]
+        Page<Employee> paginatedEmployees = Mock(Page) {
+            content >> employeesList
+            totalElements >> totalCount
+        }
+
+        employeeService.getEmployees(max, page) >> paginatedEmployees
+
+        when:
+        PageResponse<EmployeeResponse> result = employeeController.getEmployees(max, page)
+
+        then:
+        totalCount == result.totalCount()
+        page == result.pageNumber()
+        employeesList[0].id == result.content()[0].id
+        employeesList[0].firstName == result.content()[0].firstName
+        employeesList[0].lastName == result.content()[0].lastName
+        employeesList[0].role == result.content()[0].role
+        employeesList[0].totalLeaves == result.content()[0].totalLeaves
+        employeesList[0].availableLeaves == result.content()[0].availableLeaves
+    }
+
+    def "getEmployee should throw a ResourceNotFoundException when employee of given id does not exist"() {
+        given:
+        Long id = 1
+        employeeService.getEmployeeById(id) >> Optional.empty()
+
+        when:
+        employeeController.getEmployee(id)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "getEmployee should return an employee when employee of given id exists"() {
+        given:
+        Long employeeId = 1
+        Employee employee = Mock(Employee) {
+            id >> employeeId
+            firstName >> "John"
+            lastName >> "Wick"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+
+        employeeService.getEmployeeById(employeeId) >> Optional.of(employee)
+
+        when:
+        EmployeeResponse result = employeeController.getEmployee(employeeId)
+
+        then:
+        employee.id == result.id
+        employee.firstName == result.firstName
+        employee.lastName == result.lastName
+        employee.role == result.role
+        employee.totalLeaves == result.totalLeaves
+        employee.availableLeaves == result.availableLeaves
+    }
+
+    def "getManagers should return the first 10 list of managers"(){
+        given:
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+
+        Long id2 = 2
+        String firstName2 = "Juan"
+        String lastName2 = "Doh"
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+        manager1.getFirstName() >> firstName1
+        manager1.getLastName() >> lastName1
+
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+        manager2.getFirstName() >> firstName2
+        manager2.getLastName() >> lastName2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<ManagerResponse> managersResponse = employeeController.getManager(null)
+
+        then:
+        1 * employeeService.getManagers() >> managersList
+        id1 == managersResponse[0].getId()
+        firstName1 == managersResponse[0].getFirstName()
+        lastName1 == managersResponse[0].getLastName()
+        id2 == managersResponse[1].getId()
+        firstName2 == managersResponse[1].getFirstName()
+        lastName2 == managersResponse[1].getLastName()
+    }
+
+    def "getManagers should return the first 10 list of managers with names containing the filter name"(){
+        given:
+        String nameFilter = "John"
+
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+
+        Long id2 = 2
+        String firstName2 = "John"
+        String lastName2 = "Deer"
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+        manager1.getFirstName() >> firstName1
+        manager1.getLastName() >> lastName1
+
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+        manager2.getFirstName() >> firstName2
+        manager2.getLastName() >> lastName2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<ManagerResponse> managersResponse = employeeController.getManager(nameFilter)
+
+        then:
+        1 * employeeService.getManagersByName(nameFilter) >> managersList
+        id1 == managersResponse[0].getId()
+        firstName1 == managersResponse[0].getFirstName()
+        lastName1 == managersResponse[0].getLastName()
+        id2 == managersResponse[1].getId()
+        firstName2 == managersResponse[1].getFirstName()
+        lastName2 == managersResponse[1].getLastName()
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"(){

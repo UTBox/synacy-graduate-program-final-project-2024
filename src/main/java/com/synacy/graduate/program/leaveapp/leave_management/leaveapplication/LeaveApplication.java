@@ -25,7 +25,7 @@ public class LeaveApplication {
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
-    @JoinColumn(name = "manager_id", referencedColumnName = "id")
+    @JoinColumn(name = "manager_id", referencedColumnName = "id", nullable = false)
     private Long managerId;
 
     @Setter
