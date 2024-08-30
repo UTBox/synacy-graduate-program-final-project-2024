@@ -48,6 +48,8 @@ public class LeaveApplicationController {
             return new PageResponse<>(count, page, leaveApplicationResponseList);
         } catch (NotAManagerException e){
             throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
+        } catch (ResourceNotFoundException e){
+            throw new InvalidOperationException("EMPLOYEE_DOES_NOT_EXIST", "No employee is associated with the ID");
         }
     }
 
