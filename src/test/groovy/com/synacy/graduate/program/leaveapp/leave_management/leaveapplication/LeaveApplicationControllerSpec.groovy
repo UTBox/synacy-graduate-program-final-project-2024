@@ -4,6 +4,7 @@ import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import org.springframework.data.domain.Page
 import spock.lang.Specification
@@ -44,7 +45,6 @@ class LeaveApplicationControllerSpec extends Specification {
         int max = 10
         int page = 1
         Long filterId = 1
-        String errorCode = "EMPLOYEE_DOES_NOT_EXIST"
 
         leaveApplicationService.getLeavesByManager(max, page, filterId) >> { throw new ResourceNotFoundException() }
 
@@ -52,8 +52,7 @@ class LeaveApplicationControllerSpec extends Specification {
         leaveApplicationController.getLeavesByManager(max, page, filterId)
 
         then:
-        InvalidOperationException e = thrown(InvalidOperationException)
-        errorCode == e.errorCode
+        thrown(InvalidRequestException)
     }
 
     def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){

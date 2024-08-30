@@ -3,6 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -49,7 +50,7 @@ public class LeaveApplicationController {
         } catch (NotAManagerException e){
             throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
         } catch (ResourceNotFoundException e){
-            throw new InvalidOperationException("EMPLOYEE_DOES_NOT_EXIST", "No employee is associated with the ID");
+            throw new InvalidRequestException("No employee is associated with the ID");
         }
     }
 
