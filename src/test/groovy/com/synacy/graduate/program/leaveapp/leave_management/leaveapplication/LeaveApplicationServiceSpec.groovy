@@ -178,6 +178,7 @@ class LeaveApplicationServiceSpec extends Specification {
             id >> managerId
             firstName >> managerFirstName
             lastName >> managerLastName
+            role >> EmployeeRole.MANAGER
         }
 
         LeaveApplication leaveApplication1 = Mock() {
