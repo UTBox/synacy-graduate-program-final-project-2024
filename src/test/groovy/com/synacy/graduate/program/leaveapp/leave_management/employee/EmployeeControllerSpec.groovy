@@ -261,7 +261,9 @@ class EmployeeControllerSpec extends Specification {
 
         then:
         id == response.getId()
-        employeeName == response.getEmployeeName()
+        firstName == response.getFirstName()
+        lastName == response.getLastName()
+        employeeName == response.getFullName()
         role == response.getRole()
         totalLeaves == response.getTotalLeaves()
         availableLeaves == response.getAvailableLeaves()
@@ -302,7 +304,9 @@ class EmployeeControllerSpec extends Specification {
 
         then:
         id == response.getId()
-        employeeName == response.getEmployeeName()
+        firstName == response.getFirstName()
+        lastName == response.getLastName()
+        employeeName == response.getFullName()
         role == response.getRole()
         totalLeaves == response.getTotalLeaves()
         availableLeaves == response.getAvailableLeaves()
