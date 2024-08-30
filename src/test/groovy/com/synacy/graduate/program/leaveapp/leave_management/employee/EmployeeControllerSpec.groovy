@@ -90,6 +90,80 @@ class EmployeeControllerSpec extends Specification {
         employee.availableLeaves == result.availableLeaves
     }
 
+    def "getManagers should return the first 10 list of managers"(){
+        given:
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+
+        Long id2 = 2
+        String firstName2 = "Juan"
+        String lastName2 = "Doh"
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+        manager1.getFirstName() >> firstName1
+        manager1.getLastName() >> lastName1
+
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+        manager2.getFirstName() >> firstName2
+        manager2.getLastName() >> lastName2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<ManagerResponse> managersResponse = employeeController.getManager(null)
+
+        then:
+        1 * employeeService.getManagers() >> managersList
+        id1 == managersResponse[0].getId()
+        firstName1 == managersResponse[0].getFirstName()
+        lastName1 == managersResponse[0].getLastName()
+        id2 == managersResponse[1].getId()
+        firstName2 == managersResponse[1].getFirstName()
+        lastName2 == managersResponse[1].getLastName()
+    }
+
+    def "getManagers should return the first 10 list of managers with names containing the filter name"(){
+        given:
+        String nameFilter = "John"
+
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+
+        Long id2 = 2
+        String firstName2 = "John"
+        String lastName2 = "Deer"
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+        manager1.getFirstName() >> firstName1
+        manager1.getLastName() >> lastName1
+
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+        manager2.getFirstName() >> firstName2
+        manager2.getLastName() >> lastName2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<ManagerResponse> managersResponse = employeeController.getManager(nameFilter)
+
+        then:
+        1 * employeeService.getManagersByName(nameFilter) >> managersList
+        id1 == managersResponse[0].getId()
+        firstName1 == managersResponse[0].getFirstName()
+        lastName1 == managersResponse[0].getLastName()
+        id2 == managersResponse[1].getId()
+        firstName2 == managersResponse[1].getFirstName()
+        lastName2 == managersResponse[1].getLastName()
+    }
+
     def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"(){
         given:
         String errorCode = "HR_ADMIN_CREATION"

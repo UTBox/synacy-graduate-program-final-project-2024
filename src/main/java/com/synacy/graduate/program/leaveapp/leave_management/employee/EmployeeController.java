@@ -46,6 +46,22 @@ public class EmployeeController {
         return new EmployeeResponse(employee);
     }
 
+    @GetMapping("/api/v1/manager")
+    public List<ManagerResponse> getManager(@RequestParam(required = false) String name){
+
+        List<Employee> managersList;
+
+        if(name != null) {
+            managersList = employeeService.getManagersByName(name);
+        } else {
+            managersList = employeeService.getManagers();
+        }
+
+        return managersList.stream()
+                .map(ManagerResponse::new)
+                .collect(Collectors.toList());
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/api/v1/employee")
     public EmployeeResponse createEmployee(@RequestBody @Valid CreateEmployeeRequest createEmployeeRequest) {

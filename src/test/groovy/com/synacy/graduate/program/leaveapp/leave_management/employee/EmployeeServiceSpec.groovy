@@ -64,6 +64,50 @@ class EmployeeServiceSpec extends Specification {
         employee == result.get()
     }
 
+    def "getManagers should return the first 10 list of managers"(){
+        given:
+        Long id1 = 1
+        Long id2 = 2
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<Employee> managersResponse = employeeService.getManagers();
+
+        then:
+        1 * employeeRepository.findFirst10Managers() >> managersList
+        managersList == managersResponse
+    }
+
+    def "getManagersByName should return the first 10 list of managers with names that match the given filter"(){
+        given:
+        String nameFilter = "John"
+
+        Long id1 = 1
+        Long id2 = 2
+
+        Employee manager1 = Mock()
+        manager1.getId() >> id1
+
+        Employee manager2 = Mock()
+        manager2.getId() >> id2
+
+        List<Employee> managersList = [manager1, manager2]
+
+        when:
+        List<Employee> managersResponse = employeeService.getManagersByName(nameFilter);
+
+        then:
+        1 * employeeRepository.findFirst10ManagersByName(nameFilter) >> managersList
+        managersList == managersResponse
+    }
+
     def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"(){
         given:
         String firstName = "John"
