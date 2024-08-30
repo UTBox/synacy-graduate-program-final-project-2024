@@ -22,7 +22,8 @@ public class LeaveApplicationResponse {
     public LeaveApplicationResponse(LeaveApplication leaveApplication) {
         this.id = leaveApplication.getId();
         this.employee = leaveApplication.getEmployee();
-        this.manager = new ManagerResponse(leaveApplication.getManager());
+//        this.manager = new ManagerResponse(leaveApplication.getManager());
+        this.manager = null;
         this.startDate = leaveApplication.getStartDate();
         this.endDate = leaveApplication.getEndDate();
         this.days = leaveApplication.getWorkDays();
