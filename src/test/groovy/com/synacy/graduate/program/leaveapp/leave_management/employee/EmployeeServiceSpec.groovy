@@ -2,6 +2,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.employee
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.data.domain.Page
 import spock.lang.Specification
 
 
@@ -12,6 +13,55 @@ class EmployeeServiceSpec extends Specification {
 
     def setup(){
         employeeService = new EmployeeService(employeesList, employeeRepository)
+    }
+
+    def "getEmployees should return a page of non-deleted employees given max and page number"() {
+        given:
+        Employee employee = Mock(Employee) {
+            id >> 1L
+            firstName >> "John"
+            lastName >> "Doe"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+        List<Employee> employeesList = [employee]
+        Page<Employee> paginatedEmployees = Mock(Page)
+        paginatedEmployees.content >> employeesList
+
+        int max = 2
+        int page = 1
+
+        when:
+        Page<Employee> result = employeeService.getEmployees(max, page)
+
+        then:
+        1 * employeeRepository.findAllByIsDeletedIsFalse(_) >> paginatedEmployees
+        employeesList[0].id == result.content[0].id
+        employeesList[0].firstName == result.content[0].firstName
+        employeesList[0].lastName == result.content[0].lastName
+        employeesList[0].role == result.content[0].role
+        employeesList[0].totalLeaves == result.content[0].totalLeaves
+        employeesList[0].availableLeaves == result.content[0].availableLeaves
+    }
+
+    def "getEmployeeById should return an employee with the given id"() {
+        given:
+        Long id = 1
+
+        Employee employee = Mock(Employee)
+        employee.id >> id
+        employee.firstName >> "John"
+        employee.lastName >> "Doe"
+        employee.role >> EmployeeRole.EMPLOYEE
+        employee.totalLeaves >> 15
+
+        when:
+        Optional<Employee> result = employeeService.getEmployeeById(id)
+
+        then:
+        1 * employeeRepository.findById(id) >> Optional.of(employee)
+        employee == result.get()
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"(){
