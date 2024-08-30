@@ -23,7 +23,7 @@ public class EmployeeService {
 
     public Page<Employee> getEmployees(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
-        return employeeRepository.findAll(pageable);
+        return employeeRepository.findAllByIsDeletedIsFalse(pageable);
     }
 
     public Optional<Employee> getEmployeeById(Long employeeId) {
