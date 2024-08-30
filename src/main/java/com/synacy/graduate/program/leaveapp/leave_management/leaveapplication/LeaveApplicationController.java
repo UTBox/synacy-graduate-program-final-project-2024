@@ -2,6 +2,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -35,15 +36,19 @@ public class LeaveApplicationController {
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
             @PathVariable(name = "id") Long managerId
     ){
-        Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByManager(max, page, managerId);
-        long count = leaveApplications.getTotalElements();
-        List<ManagerialLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
-                .getContent()
-                .stream()
-                .map(ManagerialLeaveApplicationResponse::new)
-                .collect(Collectors.toList());
+        try{
+            Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByManager(max, page, managerId);
+            long count = leaveApplications.getTotalElements();
+            List<ManagerialLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
+                    .getContent()
+                    .stream()
+                    .map(ManagerialLeaveApplicationResponse::new)
+                    .collect(Collectors.toList());
 
-        return new PageResponse<>(count, page, leaveApplicationResponseList);
+            return new PageResponse<>(count, page, leaveApplicationResponseList);
+        } catch (NotAManagerException e){
+            throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
+        }
     }
 
     @ResponseStatus(HttpStatus.CREATED)

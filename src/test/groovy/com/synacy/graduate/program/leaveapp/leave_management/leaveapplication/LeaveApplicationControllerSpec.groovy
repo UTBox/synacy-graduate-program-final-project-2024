@@ -3,6 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import org.springframework.data.domain.Page
 import spock.lang.Specification
 
@@ -17,6 +18,24 @@ class LeaveApplicationControllerSpec extends Specification {
 
     def setup(){
         leaveApplicationController = new LeaveApplicationController(leaveApplicationService, employeeService)
+    }
+
+    def "getLeavesByManager should throw an InvalidOperationException when the role of the provided ID is not MANAGER"(){
+        given:
+        int page = 1
+        int max = 10
+        Long filterId = 1
+
+        String errorCode = "NOT_A_MANAGER"
+
+        leaveApplicationService.getLeavesByManager(max, page, filterId) >> { throw new NotAManagerException() }
+
+        when:
+        leaveApplicationController.getLeavesByManager(max, page, filterId)
+
+        then:
+        InvalidOperationException e = thrown(InvalidOperationException)
+        errorCode == e.errorCode
     }
 
     def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){
