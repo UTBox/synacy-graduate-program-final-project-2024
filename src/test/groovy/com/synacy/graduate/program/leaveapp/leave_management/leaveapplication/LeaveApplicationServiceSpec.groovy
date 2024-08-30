@@ -1,6 +1,10 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication
 
+import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import spock.lang.Specification
 
 import java.time.LocalDate
@@ -16,7 +20,8 @@ class LeaveApplicationServiceSpec extends Specification {
     def "getAllLeaveApplications should return a paginated list of all leave applications"(){
         given:
         int max = 10;
-        int page = 1;
+        int passedPage = 1;
+        int subtractedPage = 0;
         int totalCount = 2
 
         Long id1 = 1
@@ -37,10 +42,23 @@ class LeaveApplicationServiceSpec extends Specification {
         String reason2 = "Reason"
         LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
 
+        Employee employee1 = Mock(){
+            id >> employeeId1
+        }
+        Employee employee2 = Mock(){
+            id >> employeeId2
+        }
+        Employee manager1 = Mock(){
+            id >> managerId1
+        }
+        Employee manager2 = Mock(){
+            id >> managerId2
+        }
+
         LeaveApplication leave1 = Mock() {
             id >> id1
-            employeeId >> employeeId1
-            managerId >> managerId1
+            employee >> employee1
+            manager >> manager1
             startDate >> startDate1
             endDate >> endDate1
             workDays >> workDays1
@@ -49,8 +67,8 @@ class LeaveApplicationServiceSpec extends Specification {
         }
         LeaveApplication leave2 = Mock() {
             id >> id2
-            employeeId >> employeeId2
-            managerId >> managerId2
+            employee >> employee2
+            manager >> manager2
             startDate >> startDate2
             endDate >> endDate2
             workDays >> workDays2
@@ -65,11 +83,13 @@ class LeaveApplicationServiceSpec extends Specification {
             totalElements >> totalCount
         }
 
+        Pageable pageable = PageRequest.of(subtractedPage, max, Sort.by("id"));
+
         when:
-        Page<LeaveApplication> response = leaveApplicationService.getAllLeaveApplications(max, page)
+        Page<LeaveApplication> response = leaveApplicationService.getAllLeaveApplications(max, passedPage)
 
         then:
-        1 * leaveApplicationRepository.findAll(_) >> paginatedLeaves
+        1 * leaveApplicationRepository.findAll(pageable) >> paginatedLeaves
         totalCount == response.getTotalElements()
         leaveList == response.getContent()
     }
