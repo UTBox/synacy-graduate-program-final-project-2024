@@ -21,12 +21,12 @@ public class LeaveApplication {
     @Setter
     @ManyToOne(targetEntity = Employee.class)
     @JoinColumn(name = "employee_id", referencedColumnName = "id", nullable = false)
-    private Long employeeId;
+    private Employee employee;
 
     @Setter
     @ManyToOne(targetEntity = Employee.class)
     @JoinColumn(name = "manager_id", referencedColumnName = "id", nullable = false)
-    private Long managerId;
+    private Employee manager;
 
     @Setter
     @Column(nullable = false)
@@ -49,10 +49,10 @@ public class LeaveApplication {
     @Enumerated(EnumType.STRING)
     private LeaveApplicationStatus status;
 
-    public LeaveApplication(Long id, Long employeeId, Long managerId, LocalDate startDate, LocalDate endDate, Integer workDays, String reason) {
+    public LeaveApplication(Long id, Employee employee, Employee manager, LocalDate startDate, LocalDate endDate, Integer workDays, String reason) {
         this.id = id;
-        this.employeeId = employeeId;
-        this.managerId = managerId;
+        this.employee = employee;
+        this.manager = manager;
         this.startDate = startDate;
         this.endDate = endDate;
         this.workDays = workDays;
