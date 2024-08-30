@@ -41,6 +41,19 @@ public class LeaveApplication {
     @Column(nullable = false)
     private String reason;
 
-    // TODO: Create enum for status
-    private String status;
+    @Setter
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private LeaveStatus status;
+
+    public LeaveApplication(Long id, Long employeeId, Long managerId, LocalDate startDate, LocalDate endDate, Integer workDays, String reason) {
+        this.id = id;
+        this.employeeId = employeeId;
+        this.managerId = managerId;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.workDays = workDays;
+        this.reason = reason;
+        this.status = LeaveStatus.PENDING;
+    }
 }
