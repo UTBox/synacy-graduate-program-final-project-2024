@@ -3,6 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -40,6 +41,21 @@ class LeaveApplicationServiceSpec extends Specification {
 
         where:
         employeeRole << [EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
+    }
+
+    def "getLeavesByManager should throw a ResourceNotFoundException when no employee is associated with the given ID"(){
+        given:
+        int max = 10
+        int page = 1
+        Long filterId = 1
+
+        employeeService.getEmployeeById(filterId) >> Optional.empty()
+
+        when:
+        leaveApplicationService.getLeavesByManager(max, page, filterId)
+
+        then:
+        thrown(ResourceNotFoundException)
     }
 
     def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){

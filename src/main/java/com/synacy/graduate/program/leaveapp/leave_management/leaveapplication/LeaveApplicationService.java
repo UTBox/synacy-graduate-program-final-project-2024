@@ -29,7 +29,8 @@ public class LeaveApplicationService {
 
     Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId){
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
-        Employee manager = employeeService.getEmployeeById(managerId).get();
+        Employee manager = employeeService.getEmployeeById(managerId)
+                .orElseThrow(ResourceNotFoundException::new);
 
         if(manager.getRole() != EmployeeRole.MANAGER){
             throw new NotAManagerException();
