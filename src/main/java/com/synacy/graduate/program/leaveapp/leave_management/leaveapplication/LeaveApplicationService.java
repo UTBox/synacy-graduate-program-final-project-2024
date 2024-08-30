@@ -1,5 +1,8 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
+import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
+import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRepository;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,21 +19,22 @@ public class LeaveApplicationService {
         this.leaveApplicationRepository = leaveApplicationRepository;
     }
 
-    void createLeaveApplication(CreateLeaveApplicationRequest createLeaveApplicationRequest) {
-
+    LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
         Integer leaveWorkDays = calculateLeaveWorkDays(
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
 
         LeaveApplication leaveApplication = new LeaveApplication();
-        leaveApplication.setEmployeeId(createLeaveApplicationRequest.getEmployeeId());
-        leaveApplication.setManagerId(createLeaveApplicationRequest.getManagerId());
+        leaveApplication.setEmployee(employee);
+        leaveApplication.setManager(employee.getManager());
         leaveApplication.setStartDate(createLeaveApplicationRequest.getStartDate());
         leaveApplication.setEndDate(createLeaveApplicationRequest.getEndDate());
         leaveApplication.setWorkDays(leaveWorkDays);
+        leaveApplication.setReason(createLeaveApplicationRequest.getReason());
+        leaveApplication.setStatus(LeaveApplicationStatus.PENDING);
 
-        leaveApplicationRepository.save(leaveApplication);
+        return leaveApplicationRepository.save(leaveApplication);
     }
 
     private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) {
