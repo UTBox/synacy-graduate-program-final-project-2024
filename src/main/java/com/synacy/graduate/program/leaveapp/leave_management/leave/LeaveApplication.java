@@ -1,5 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leave;
 
+import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,10 +19,12 @@ public class LeaveApplication {
     private Long id;
 
     @Setter
+    @ManyToOne(targetEntity = Employee.class)
     @Column(nullable = false)
     private Long employeeId;
 
     @Setter
+    @ManyToOne(targetEntity = Employee.class)
     @Column
     private Long managerId;
 
