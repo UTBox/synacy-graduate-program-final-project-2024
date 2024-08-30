@@ -1,6 +1,7 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
+import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -17,6 +18,28 @@ class LeaveApplicationServiceSpec extends Specification {
 
     def setup(){
         leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService)
+    }
+
+    def "getLeavesByManager should throw a NotAManagerException when the provided ID has a #employeeRole role"(){
+        given:
+        int max = 10
+        int page = 1
+        Long filterId = 1
+        Employee notManager = Mock(Employee){
+            id >> filterId
+            role >> employeeRole
+        }
+
+        employeeService.getEmployeeById(filterId) >> Optional.of(notManager)
+
+        when:
+        leaveApplicationService.getLeavesByManager(max, page, filterId)
+
+        then:
+        thrown(NotAManagerException)
+
+        where:
+        employeeRole << [EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
     }
 
     def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){
