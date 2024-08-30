@@ -1,6 +1,7 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
@@ -60,15 +61,16 @@ public class EmployeeController {
         }
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
-    public UpdateEmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+    public EmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
-            Employee employee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
-            return new UpdateEmployeeResponse(employee);
-        } catch (RuntimeException e) {
-            throw new RuntimeException();
+            Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
+            return new EmployeeResponse(updatedEmployee);
+        } catch (InvalidUpdatedTotalLeavesException e) {
+            throw new InvalidOperationException("INVALID_TOTAL_LEAVES", "Cannot set total leave credits less than available leave credits.");
         }
     }
 }
