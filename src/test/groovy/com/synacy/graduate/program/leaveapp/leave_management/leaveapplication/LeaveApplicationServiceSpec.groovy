@@ -17,12 +17,13 @@ class LeaveApplicationServiceSpec extends Specification {
     LeaveApplicationService leaveApplicationService
     LeaveApplicationRepository leaveApplicationRepository = Mock()
     EmployeeService employeeService = Mock()
+    LeaveQuantityModifier leaveQuantityModifier = Mock()
 
-    def setup(){
-        leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService)
+    def setup() {
+        leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService, leaveQuantityModifier)
     }
 
-    def "getAllLeaveApplications should return a paginated list of all leave applications"(){
+    def "getAllLeaveApplications should return a paginated list of all leave applications"() {
         given:
         int max = 10;
         int passedPage = 1;
@@ -47,16 +48,16 @@ class LeaveApplicationServiceSpec extends Specification {
         String reason2 = "Reason"
         LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
 
-        Employee employee1 = Mock(){
+        Employee employee1 = Mock() {
             id >> employeeId1
         }
-        Employee employee2 = Mock(){
+        Employee employee2 = Mock() {
             id >> employeeId2
         }
-        Employee manager1 = Mock(){
+        Employee manager1 = Mock() {
             id >> managerId1
         }
-        Employee manager2 = Mock(){
+        Employee manager2 = Mock() {
             id >> managerId2
         }
 
@@ -83,7 +84,7 @@ class LeaveApplicationServiceSpec extends Specification {
 
         List<LeaveApplication> leaveList = [leave1, leave2]
 
-        Page<LeaveApplication> paginatedLeaves = Mock(){
+        Page<LeaveApplication> paginatedLeaves = Mock() {
             content >> leaveList
             totalElements >> totalCount
         }
@@ -99,12 +100,12 @@ class LeaveApplicationServiceSpec extends Specification {
         leaveList == response.getContent()
     }
 
-    def "getLeavesByManager should throw a NotAManagerException when the provided ID has a #employeeRole role"(){
+    def "getLeavesByManager should throw a NotAManagerException when the provided ID has a #employeeRole role"() {
         given:
         int max = 10
         int page = 1
         Long filterId = 1
-        Employee notManager = Mock(Employee){
+        Employee notManager = Mock(Employee) {
             id >> filterId
             role >> employeeRole
         }
@@ -121,7 +122,7 @@ class LeaveApplicationServiceSpec extends Specification {
         employeeRole << [EmployeeRole.HR_ADMIN, EmployeeRole.EMPLOYEE]
     }
 
-    def "getLeavesByManager should throw a ResourceNotFoundException when no employee is associated with the given ID"(){
+    def "getLeavesByManager should throw a ResourceNotFoundException when no employee is associated with the given ID"() {
         given:
         int max = 10
         int page = 1
@@ -136,7 +137,7 @@ class LeaveApplicationServiceSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){
+    def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"() {
         given:
         int max = 10
         int passedPage = 1
@@ -166,15 +167,15 @@ class LeaveApplicationServiceSpec extends Specification {
         String reason2 = "Reason 1"
         LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
 
-        Employee employee1 = Mock(Employee){
+        Employee employee1 = Mock(Employee) {
             firstName >> employeeFirstName1
             lastName >> employeeLastName1
         }
-        Employee employee2 = Mock(Employee){
+        Employee employee2 = Mock(Employee) {
             firstName >> employeeFirstName2
             lastName >> employeeLastName2
         }
-        Employee managerObject = Mock(Employee){
+        Employee managerObject = Mock(Employee) {
             id >> managerId
             firstName >> managerFirstName
             lastName >> managerLastName
@@ -219,5 +220,76 @@ class LeaveApplicationServiceSpec extends Specification {
         1 * leaveApplicationRepository.findAllByManager(managerObject, pageable) >> leaveApplicationPage
         totalCount == response.getTotalElements()
         leaveApplicationList == response.getContent()
+    }
+
+    def "getLeaveApplicationById should return a leave application with the given existing id"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication leave = Mock(LeaveApplication) {
+            id >> leaveId
+        }
+
+        when:
+        Optional<LeaveApplication> result = leaveApplicationService.getLeaveApplicationById(1L)
+
+        then:
+        1 * leaveApplicationRepository.findById(_) >> Optional.of(leave)
+        leaveId == result.get().id
+    }
+
+    def "updateLeaveApplication should throw an InvalidLeaveApplicationStatusException when status of leave application to update is not PENDING"() {
+        given:
+        LeaveApplication leave = Mock(LeaveApplication) {
+            status >> leaveStatus
+        }
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest)
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        thrown(InvalidLeaveApplicationStatusException)
+
+        where:
+        leaveStatus << [LeaveApplicationStatus.APPROVED, LeaveApplicationStatus.REJECTED, LeaveApplicationStatus.CANCELLED]
+    }
+
+    def "updateLeaveApplication should not modify the leave quantity when leave request status is not REJECTED"() {
+        given:
+        LeaveApplication leave = Mock(LeaveApplication) {
+            status >> LeaveApplicationStatus.PENDING
+        }
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest) {
+            status >> requestStatus
+        }
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        0 * leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave)
+
+        where:
+        requestStatus << [LeaveApplicationStatus.APPROVED, LeaveApplicationStatus.CANCELLED]
+    }
+
+    def "updateLeaveApplication should update and save the leave application when status is PENDING"() {
+        given:
+        LeaveApplicationStatus expectedStatus = LeaveApplicationStatus.REJECTED
+        LeaveApplication leave = new LeaveApplication()
+        leave.status = LeaveApplicationStatus.PENDING
+
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest) {
+            status >> expectedStatus
+        }
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        1 * leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave)
+        1 * leaveApplicationRepository.save(_) >> { LeaveApplication passed ->
+            assert expectedStatus == passed.status
+        }
     }
 }
