@@ -66,8 +66,6 @@ public class LeaveApplicationService {
                 createLeaveApplicationRequest.getEndDate()
         );
 
-//        employeeService.subtractEmployeeAvailableLeaveCredits(employee, leaveWorkDays);
-
         LeaveApplication leaveApplication = setLeaveApplication(employee, createLeaveApplicationRequest, leaveWorkDays);
         leaveQuantityModifier.deductLeaveQuantityBasedOnLeaveWorkDays(employee, leaveWorkDays);
 
