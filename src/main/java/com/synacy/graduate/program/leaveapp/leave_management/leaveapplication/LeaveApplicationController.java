@@ -1,7 +1,5 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
-import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
@@ -19,11 +17,9 @@ import java.util.stream.Collectors;
 public class LeaveApplicationController {
 
     private final LeaveApplicationService leaveApplicationService;
-    private final EmployeeService employeeService;
 
-    public LeaveApplicationController(LeaveApplicationService leaveApplicationService, EmployeeService employeeService) {
+    public LeaveApplicationController(LeaveApplicationService leaveApplicationService) {
         this.leaveApplicationService = leaveApplicationService;
-        this.employeeService = employeeService;
     }
 
     @GetMapping("api/v1/leave")
@@ -75,8 +71,8 @@ public class LeaveApplicationController {
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
             @PathVariable(name = "id") Long employeeId
-    ){
-        try{
+    ) {
+        try {
             Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByEmployee(max, page, employeeId);
             long count = leaveApplications.getTotalElements();
             List<EmployeeLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
@@ -86,7 +82,7 @@ public class LeaveApplicationController {
                     .collect(Collectors.toList());
 
             return new PageResponse<>(count, page, leaveApplicationResponseList);
-        } catch (ResourceNotFoundException e){
+        } catch (ResourceNotFoundException e) {
             throw new InvalidRequestException("No employee is associated with the ID");
         }
     }
