@@ -260,6 +260,21 @@ class LeaveApplicationControllerSpec extends Specification {
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
     }
+
+    def "getLeaveByEmployee should throw an InvalidRequestException when no employee is associated with the given ID"(){
+        given:
+        int max = 10
+        int page = 1
+        int employeeId = 1
+
+        leaveApplicationService.getLeavesByEmployee(max, page, employeeId) >> {throw new ResourceNotFoundException()}
+
+        when:
+        leaveApplicationController.getLeaveByEmployee(max, page, employeeId)
+
+        then:
+        thrown(InvalidRequestException)
+    }
     
     def "getLeaveByEmployee should return a paginated list of leaves by the employee"(){
         given:
