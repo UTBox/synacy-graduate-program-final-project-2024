@@ -102,4 +102,16 @@ public class LeaveApplicationController {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
         }
     }
+
+    @DeleteMapping("api/v1/leave/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelLeaveApplication(@PathVariable(name = "id") Long id) {
+        LeaveApplication leave = leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
+        try {
+            leaveApplicationService.cancelLeaveApplication(leave);
+        } catch (InvalidLeaveApplicationStatusException e) {
+            throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+        }
+    }
+
 }
