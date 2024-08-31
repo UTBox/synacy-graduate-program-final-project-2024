@@ -2,9 +2,11 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRepository;
+import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -13,18 +15,32 @@ import java.time.LocalDate;
 public class LeaveApplicationService {
 
     private final LeaveApplicationRepository leaveApplicationRepository;
+    private final EmployeeService employeeService;
 
     @Autowired
-    public LeaveApplicationService(LeaveApplicationRepository leaveApplicationRepository) {
+    public LeaveApplicationService(LeaveApplicationRepository leaveApplicationRepository, EmployeeService employeeService) {
         this.leaveApplicationRepository = leaveApplicationRepository;
+        this.employeeService = employeeService;
     }
 
-    LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
+    @Transactional
+    LeaveApplication createLeaveApplication(
+            Employee employee,
+            CreateLeaveApplicationRequest createLeaveApplicationRequest
+    ) throws InvalidLeaveDateException, InvalidLeaveApplicationException {
         Integer leaveWorkDays = calculateLeaveWorkDays(
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
 
+        employeeService.subtractEmployeeAvailableLeaveCredits(employee, leaveWorkDays);
+
+        LeaveApplication leaveApplication = setLeaveApplication(employee, createLeaveApplicationRequest, leaveWorkDays);
+
+        return leaveApplicationRepository.save(leaveApplication);
+    }
+
+    private static LeaveApplication setLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest, Integer leaveWorkDays) {
         LeaveApplication leaveApplication = new LeaveApplication();
         leaveApplication.setEmployee(employee);
         leaveApplication.setManager(employee.getManager());
@@ -33,8 +49,7 @@ public class LeaveApplicationService {
         leaveApplication.setWorkDays(leaveWorkDays);
         leaveApplication.setReason(createLeaveApplicationRequest.getReason());
         leaveApplication.setStatus(LeaveApplicationStatus.PENDING);
-
-        return leaveApplicationRepository.save(leaveApplication);
+        return leaveApplication;
     }
 
     private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) {
