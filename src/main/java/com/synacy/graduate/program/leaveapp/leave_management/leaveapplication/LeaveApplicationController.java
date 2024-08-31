@@ -68,21 +68,42 @@ public class LeaveApplicationController {
         }
     }
 
+    @GetMapping("/api/v1/leave/employee/{id}")
+    public PageResponse<EmployeeLeaveApplicationResponse> getLeaveByEmployee(
+            @RequestParam(name = "max", defaultValue = "2")
+            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @RequestParam(name = "page", defaultValue = "1")
+            @Min(value = 1, message = "Page must be greater than 1") Integer page,
+            @PathVariable(name = "id") Long employeeId
+    ){
+        try{
+            Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByEmployee(max, page, employeeId);
+            long count = leaveApplications.getTotalElements();
+            List<EmployeeLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
+                    .getContent()
+                    .stream()
+                    .map(EmployeeLeaveApplicationResponse::new)
+                    .collect(Collectors.toList());
+
+            return new PageResponse<>(count, page, leaveApplicationResponseList);
+        } catch (ResourceNotFoundException e){
+            throw new InvalidRequestException("No employee is associated with the ID");
+        }
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("api/v1/leave")
     public EmployeeLeaveApplicationResponse createLeaveApplication(@RequestBody @Valid CreateLeaveApplicationRequest createLeaveApplicationRequest) {
-        Employee employee = employeeService.getEmployeeById(
-                createLeaveApplicationRequest.getEmployeeId()
-        ).orElseThrow(ResourceNotFoundException::new);
-
         LeaveApplication leaveApplication;
 
         try {
-            leaveApplication = leaveApplicationService.createLeaveApplication(employee, createLeaveApplicationRequest);
+            leaveApplication = leaveApplicationService.createLeaveApplication(createLeaveApplicationRequest);
         } catch (InvalidLeaveDateException e) {
             throw new InvalidOperationException("INVALID_LEAVE_DATES", e.getMessage());
         } catch (InvalidLeaveApplicationException e) {
             throw new InvalidOperationException("INSUFFICIENT_LEAVE_CREDITS", e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            throw new InvalidRequestException("Employee does not exist");
         }
 
         return new EmployeeLeaveApplicationResponse(leaveApplication);
@@ -102,4 +123,16 @@ public class LeaveApplicationController {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
         }
     }
+
+    @DeleteMapping("api/v1/leave/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelLeaveApplication(@PathVariable(name = "id") Long id) {
+        LeaveApplication leave = leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
+        try {
+            leaveApplicationService.cancelLeaveApplication(leave);
+        } catch (InvalidLeaveApplicationStatusException e) {
+            throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+        }
+    }
+
 }

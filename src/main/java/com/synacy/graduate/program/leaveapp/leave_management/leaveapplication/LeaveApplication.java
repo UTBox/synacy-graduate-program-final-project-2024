@@ -59,4 +59,8 @@ public class LeaveApplication {
         this.reason = reason;
         this.status = LeaveApplicationStatus.PENDING;
     }
+
+    void cancelLeave() {
+        this.status = LeaveApplicationStatus.CANCELLED;
+    }
 }

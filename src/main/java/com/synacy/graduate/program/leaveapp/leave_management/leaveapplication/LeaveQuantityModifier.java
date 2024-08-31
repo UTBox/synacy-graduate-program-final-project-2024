@@ -15,12 +15,12 @@ public class LeaveQuantityModifier {
         this.employeeService = employeeService;
     }
 
-    public void deductLeaveQuantityBasedOnApprovedRequest(LeaveApplication leaveApplication) {
-        Employee employee = employeeService
-                .getEmployeeById(leaveApplication.getEmployee().getId())
-                .orElseThrow(ResourceNotFoundException::new);
+    public void deductLeaveQuantityBasedOnLeaveWorkDays(Employee employee, Integer leaveWorkDays) {
+        if (employee.getAvailableLeaves() < leaveWorkDays) {
+            throw new InvalidLeaveApplicationException("Employee has insufficient leave credits");
+        }
 
-        employee.deductLeaveBalance(leaveApplication.getWorkDays());
+        employee.deductLeaveBalance(leaveWorkDays);
     }
 
     public void addLeaveQuantityBasedOnRejectedOrCancelledRequest(LeaveApplication leaveApplication) {
