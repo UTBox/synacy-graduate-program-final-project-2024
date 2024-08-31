@@ -333,15 +333,16 @@ class EmployeeControllerSpec extends Specification {
 
         employeeService.getEmployeeById(id) >> Optional.of(employee)
 
-        Employee updatedEmployee = Mock()
-        updatedEmployee.getId() >> id
-        updatedEmployee.getFirstName() >> firstName
-        updatedEmployee.getLastName() >> lastName
-        updatedEmployee.getRole() >> role
-        updatedEmployee.getTotalLeaves() >> updatedTotalLeaves
-        updatedEmployee.getAvailableLeaves() >> availableLeaves
-        updatedEmployee.getManager() >> manager
-        updatedEmployee.getIsDeleted() >> isDeleted
+        Employee updatedEmployee = Mock() {
+            getId() >> id
+            getFirstName() >> firstName
+            getLastName() >> lastName
+            getRole() >> role
+            getTotalLeaves() >> updatedTotalLeaves
+            getAvailableLeaves() >> availableLeaves
+            getManager() >> manager
+            getIsDeleted() >> isDeleted
+        }
 
         when:
         EmployeeResponse employeeResponse = employeeController.updateEmployee(id, updateEmployeeRequest)
@@ -349,7 +350,8 @@ class EmployeeControllerSpec extends Specification {
         then:
         1 * employeeService.updateEmployee(employee, updateEmployeeRequest) >> updatedEmployee
         id == employeeResponse.getId()
-        (firstName + " " + lastName) == employeeResponse.getEmployeeName()
+        firstName == employeeResponse.getFirstName()
+        lastName == employeeResponse.getLastName()
         role == employeeResponse.getRole()
         updatedTotalLeaves == employeeResponse.getTotalLeaves()
         availableLeaves == employeeResponse.getAvailableLeaves()
