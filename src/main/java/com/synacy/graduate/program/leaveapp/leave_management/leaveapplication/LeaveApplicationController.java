@@ -2,8 +2,8 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
-import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
+import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import jakarta.validation.Valid;
@@ -75,7 +75,16 @@ public class LeaveApplicationController {
                 createLeaveApplicationRequest.getEmployeeId()
         ).orElseThrow(ResourceNotFoundException::new);
 
-        LeaveApplication leaveApplication = leaveApplicationService.createLeaveApplication(employee, createLeaveApplicationRequest);
+        LeaveApplication leaveApplication;
+
+        try {
+            leaveApplication = leaveApplicationService.createLeaveApplication(employee, createLeaveApplicationRequest);
+        } catch (InvalidLeaveDateException e) {
+            throw new InvalidOperationException("INVALID_LEAVE_DATES", e.getMessage());
+        } catch (InvalidLeaveApplicationException e) {
+            throw new InvalidOperationException("INSUFFICIENT_LEAVE_CREDITS", e.getMessage());
+        }
+
         return new EmployeeLeaveApplicationResponse(leaveApplication);
     }
 

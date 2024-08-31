@@ -33,12 +33,12 @@ public class LeaveApplicationService {
         this.leaveQuantityModifier = leaveQuantityModifier;
     }
 
-    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId) {
+    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId){
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         Employee manager = employeeService.getEmployeeById(managerId)
                 .orElseThrow(ResourceNotFoundException::new);
 
-        if (manager.getRole() != EmployeeRole.MANAGER) {
+        if(manager.getRole() != EmployeeRole.MANAGER){
             throw new NotAManagerException();
         }
 
@@ -50,12 +50,24 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAll(pageable);
     }
 
-    LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
+    @Transactional
+    LeaveApplication createLeaveApplication(
+            Employee employee,
+            CreateLeaveApplicationRequest createLeaveApplicationRequest
+    ) throws InvalidLeaveDateException, InvalidLeaveApplicationException {
         Integer leaveWorkDays = calculateLeaveWorkDays(
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
 
+        employeeService.subtractEmployeeAvailableLeaveCredits(employee, leaveWorkDays);
+
+        LeaveApplication leaveApplication = setLeaveApplication(employee, createLeaveApplicationRequest, leaveWorkDays);
+
+        return leaveApplicationRepository.save(leaveApplication);
+    }
+
+    private static LeaveApplication setLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest, Integer leaveWorkDays) {
         LeaveApplication leaveApplication = new LeaveApplication();
         leaveApplication.setEmployee(employee);
         leaveApplication.setManager(employee.getManager());
@@ -64,21 +76,16 @@ public class LeaveApplicationService {
         leaveApplication.setWorkDays(leaveWorkDays);
         leaveApplication.setReason(createLeaveApplicationRequest.getReason());
         leaveApplication.setStatus(LeaveApplicationStatus.PENDING);
-
-        return leaveApplicationRepository.save(leaveApplication);
+        return leaveApplication;
     }
 
-    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null) {
-            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
-        } else if (startDate.isAfter(endDate)) {
-            throw new InvalidLeaveDateException("Start date cannot be after end date.");
-        }
+    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
+        validateLeaveDates(startDate, endDate);
 
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
 
-        while (!currentDate.isAfter(endDate)) {
+        while(!currentDate.isAfter(endDate)) {
             if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY && currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
                 leaveWorkDays++;
             }
@@ -104,5 +111,15 @@ public class LeaveApplicationService {
 
     Optional<LeaveApplication> getLeaveApplicationById(Long id) {
         return leaveApplicationRepository.findById(id);
+    }
+
+    private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
+        } else if (startDate.isAfter(endDate)) {
+            throw new InvalidLeaveDateException("Start date cannot be after end date.");
+        } else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
+            throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
+        }
     }
 }
