@@ -47,10 +47,14 @@ public class LeaveApplicationService {
 
     @Transactional
     LeaveApplication createLeaveApplication(
-            Employee employee,
             CreateLeaveApplicationRequest createLeaveApplicationRequest
     ) throws InvalidLeaveDateException, InvalidLeaveApplicationException {
+        Employee employee = employeeService.getEmployeeById(
+                createLeaveApplicationRequest.getEmployeeId()
+        ).orElseThrow(ResourceNotFoundException::new);
+
         Integer leaveWorkDays = calculateLeaveWorkDays(
+                employee.getId(),
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
@@ -74,8 +78,8 @@ public class LeaveApplicationService {
         return leaveApplication;
     }
 
-    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
-        validateLeaveDates(startDate, endDate);
+    private Integer calculateLeaveWorkDays(Long employeeId, LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
+        validateLeaveDates(employeeId, startDate, endDate);
 
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
@@ -90,13 +94,18 @@ public class LeaveApplicationService {
         return leaveWorkDays;
     }
 
-    private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {
+    private void validateLeaveDates(Long employeeId, LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null) {
             throw new InvalidLeaveDateException("Start date or end date cannot be null.");
-        } else if (startDate.isAfter(endDate)) {
+        }
+        if (startDate.isAfter(endDate)) {
             throw new InvalidLeaveDateException("Start date cannot be after end date.");
-        } else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
+        }
+        if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
             throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
+        }
+        if (leaveApplicationRepository.countOverlappingLeaveApplications(employeeId, startDate, endDate) > 0) {
+            throw new InvalidLeaveDateException("Overlapping leave applications.");
         }
     }
 }

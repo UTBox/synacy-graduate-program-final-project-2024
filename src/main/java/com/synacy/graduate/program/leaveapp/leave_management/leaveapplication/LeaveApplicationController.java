@@ -72,18 +72,16 @@ public class LeaveApplicationController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("api/v1/leave")
     public EmployeeLeaveApplicationResponse createLeaveApplication(@RequestBody @Valid CreateLeaveApplicationRequest createLeaveApplicationRequest) {
-        Employee employee = employeeService.getEmployeeById(
-                createLeaveApplicationRequest.getEmployeeId()
-        ).orElseThrow(ResourceNotFoundException::new);
-
         LeaveApplication leaveApplication;
 
         try {
-            leaveApplication = leaveApplicationService.createLeaveApplication(employee, createLeaveApplicationRequest);
+            leaveApplication = leaveApplicationService.createLeaveApplication(createLeaveApplicationRequest);
         } catch (InvalidLeaveDateException e) {
             throw new InvalidOperationException("INVALID_LEAVE_DATES", e.getMessage());
         } catch (InvalidLeaveApplicationException e) {
             throw new InvalidOperationException("INSUFFICIENT_LEAVE_CREDITS", e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            throw new InvalidRequestException("Employee does not exist");
         }
 
         return new EmployeeLeaveApplicationResponse(leaveApplication);
