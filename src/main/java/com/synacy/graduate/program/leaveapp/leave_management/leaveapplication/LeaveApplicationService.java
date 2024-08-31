@@ -42,7 +42,7 @@ public class LeaveApplicationService {
             throw new NotAManagerException();
         }
 
-        return leaveApplicationRepository.findAllByManager(manager, pageable);
+        return leaveApplicationRepository.findAllByManagerAndStatus(manager, LeaveApplicationStatus.PENDING, pageable);
     }
 
     Page<LeaveApplication> getAllLeaveApplications(int max, int page) {
