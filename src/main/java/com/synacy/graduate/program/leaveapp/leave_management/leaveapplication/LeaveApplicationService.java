@@ -1,10 +1,8 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRepository;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
-import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -60,6 +58,10 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAll(pageable);
     }
 
+    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
+        return leaveApplicationRepository.findById(id);
+    }
+
     @Transactional
     LeaveApplication createLeaveApplication(
             CreateLeaveApplicationRequest createLeaveApplicationRequest
@@ -101,10 +103,6 @@ public class LeaveApplicationService {
         }
 
         return leaveApplicationRepository.save(leave);
-    }
-
-    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
-        return leaveApplicationRepository.findById(id);
     }
 
     @Transactional
