@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -44,12 +45,24 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAll(pageable);
     }
 
-    LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
+    @Transactional
+    LeaveApplication createLeaveApplication(
+            Employee employee,
+            CreateLeaveApplicationRequest createLeaveApplicationRequest
+    ) throws InvalidLeaveDateException, InvalidLeaveApplicationException {
         Integer leaveWorkDays = calculateLeaveWorkDays(
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
 
+        employeeService.subtractEmployeeAvailableLeaveCredits(employee, leaveWorkDays);
+
+        LeaveApplication leaveApplication = setLeaveApplication(employee, createLeaveApplicationRequest, leaveWorkDays);
+
+        return leaveApplicationRepository.save(leaveApplication);
+    }
+
+    private static LeaveApplication setLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest, Integer leaveWorkDays) {
         LeaveApplication leaveApplication = new LeaveApplication();
         leaveApplication.setEmployee(employee);
         leaveApplication.setManager(employee.getManager());
@@ -58,16 +71,11 @@ public class LeaveApplicationService {
         leaveApplication.setWorkDays(leaveWorkDays);
         leaveApplication.setReason(createLeaveApplicationRequest.getReason());
         leaveApplication.setStatus(LeaveApplicationStatus.PENDING);
-
-        return leaveApplicationRepository.save(leaveApplication);
+        return leaveApplication;
     }
 
-    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null) {
-            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
-        } else if (startDate.isAfter(endDate)) {
-            throw new InvalidLeaveDateException("Start date cannot be after end date.");
-        }
+    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
+        validateLeaveDates(startDate, endDate);
 
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
@@ -80,5 +88,15 @@ public class LeaveApplicationService {
         }
 
         return leaveWorkDays;
+    }
+
+    private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
+        } else if (startDate.isAfter(endDate)) {
+            throw new InvalidLeaveDateException("Start date cannot be after end date.");
+        } else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
+            throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
+        }
     }
 }

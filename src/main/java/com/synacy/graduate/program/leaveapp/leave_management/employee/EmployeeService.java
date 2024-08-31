@@ -1,5 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
+import com.synacy.graduate.program.leaveapp.leave_management.leaveapplication.InvalidLeaveApplicationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,15 @@ public class EmployeeService {
         selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
 
         return employeeRepository.save(selectedEmployee);
+    }
+
+    public void subtractEmployeeAvailableLeaveCredits(Employee employee, Integer leaveWorkDays) {
+        if (employee.getAvailableLeaves() < leaveWorkDays) {
+            throw new InvalidLeaveApplicationException("Employee has insufficient leave credits");
+        } else {
+            employee.setAvailableLeaves(employee.getAvailableLeaves() - leaveWorkDays);
+            employeeRepository.save(employee);
+        }
     }
 
     private void createInitialEmployees() {
