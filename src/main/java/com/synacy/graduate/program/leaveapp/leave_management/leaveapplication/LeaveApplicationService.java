@@ -1,7 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRepository;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
@@ -15,17 +14,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 public class LeaveApplicationService {
 
     private final LeaveApplicationRepository leaveApplicationRepository;
     private final EmployeeService employeeService;
+    private final LeaveQuantityModifier leaveQuantityModifier;
 
     @Autowired
-    public LeaveApplicationService(LeaveApplicationRepository leaveApplicationRepository, EmployeeService employeeService) {
+    public LeaveApplicationService(
+            LeaveApplicationRepository leaveApplicationRepository,
+            EmployeeService employeeService,
+            LeaveQuantityModifier leaveQuantityModifier) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.employeeService = employeeService;
+        this.leaveQuantityModifier = leaveQuantityModifier;
     }
 
     Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId){
@@ -88,6 +93,24 @@ public class LeaveApplicationService {
         }
 
         return leaveWorkDays;
+    }
+
+    @Transactional
+    LeaveApplication updateLeaveApplication(LeaveApplication leave, UpdateLeaveApplicationRequest request) {
+        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
+            throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
+        }
+
+        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
+            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        }
+
+        leave.setStatus(request.getLeaveApplicationStatus());
+        return leaveApplicationRepository.save(leave);
+    }
+
+    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
+        return leaveApplicationRepository.findById(id);
     }
 
     private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {

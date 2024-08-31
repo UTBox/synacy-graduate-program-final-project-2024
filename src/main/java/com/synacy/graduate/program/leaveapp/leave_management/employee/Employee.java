@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.validation.constraints.NotNull;
 
 @Getter
 @NoArgsConstructor
@@ -54,5 +53,13 @@ public class Employee {
         this.totalLeaves = totalLeaves;
         this.availableLeaves = totalLeaves;
         this.isDeleted = false;
+    }
+
+    public void deductLeaveBalance(int days) {
+        this.availableLeaves = this.availableLeaves - days;
+    }
+
+    public void addLeaveBalance(int days) {
+        this.availableLeaves = this.availableLeaves + days;
     }
 }
