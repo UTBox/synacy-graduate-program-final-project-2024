@@ -94,30 +94,15 @@ public class LeaveApplicationService {
             throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
         }
 
-        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.APPROVED
-                || request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
-            leave.setStatus(request.getLeaveApplicationStatus());
-            updateLeaveQuantityBasedOnStatus(leave);
+        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
+            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
         }
 
+        leave.setStatus(request.getLeaveApplicationStatus());
         return leaveApplicationRepository.save(leave);
     }
 
     Optional<LeaveApplication> getLeaveApplicationById(Long id) {
         return leaveApplicationRepository.findById(id);
-    }
-
-    private void updateLeaveQuantityBasedOnStatus(LeaveApplication leave) {
-        switch (leave.getStatus()) {
-            case APPROVED:
-                leaveQuantityModifier.deductLeaveQuantityBasedOnApprovedRequest(leave);
-                break;
-            case REJECTED:
-            case CANCELLED:
-                leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
-                break;
-            default:
-                break;
-        }
     }
 }
