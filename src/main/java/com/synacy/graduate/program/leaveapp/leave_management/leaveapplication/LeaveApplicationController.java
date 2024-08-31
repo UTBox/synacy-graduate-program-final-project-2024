@@ -31,7 +31,7 @@ public class LeaveApplicationController {
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page
     ){
-        Page<LeaveApplication> leaveApplications = leaveApplicationService.getAllLeaveApplications(max, page);
+        Page<LeaveApplication> leaveApplications = leaveApplicationService.getPendingLeaveApplications(max, page);
         long totalCount = leaveApplications.getTotalElements();
         List<ManagerialLeaveApplicationResponse> leaveApplicationList = leaveApplications
                 .getContent()

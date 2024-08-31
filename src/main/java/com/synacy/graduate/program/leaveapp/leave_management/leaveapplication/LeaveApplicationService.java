@@ -23,9 +23,9 @@ public class LeaveApplicationService {
         this.leaveApplicationRepository = leaveApplicationRepository;
     }
 
-    Page<LeaveApplication> getAllLeaveApplications(int max, int page) {
+    Page<LeaveApplication> getPendingLeaveApplications(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
-        return leaveApplicationRepository.findAll(pageable);
+        return leaveApplicationRepository.findAllByStatus(LeaveApplicationStatus.PENDING, pageable);
     }
 
     LeaveApplication createLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest) {
