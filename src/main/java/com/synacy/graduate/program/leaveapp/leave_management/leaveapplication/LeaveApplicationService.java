@@ -74,12 +74,8 @@ public class LeaveApplicationService {
         return leaveApplication;
     }
 
-    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null) {
-            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
-        } else if (startDate.isAfter(endDate)) {
-            throw new InvalidLeaveDateException("Start date cannot be after end date.");
-        }
+    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
+        validateLeaveDates(startDate, endDate);
 
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
@@ -92,5 +88,15 @@ public class LeaveApplicationService {
         }
 
         return leaveWorkDays;
+    }
+
+    private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new InvalidLeaveDateException("Start date or end date cannot be null.");
+        } else if (startDate.isAfter(endDate)) {
+            throw new InvalidLeaveDateException("Start date cannot be after end date.");
+        } else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
+            throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
+        }
     }
 }
