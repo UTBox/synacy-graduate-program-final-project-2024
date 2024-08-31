@@ -13,6 +13,7 @@ import java.time.LocalDate;
 public interface LeaveApplicationRepository extends JpaRepository<LeaveApplication, Long> {
 
     Page<LeaveApplication> findAllByManager(Employee manager, Pageable pageable);
+    Page<LeaveApplication> findAllByEmployee(Employee employee, Pageable pageable);
 
     @Query(value = "SELECT COUNT(*) " +
             "FROM leave_application l " +

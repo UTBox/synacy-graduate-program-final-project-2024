@@ -17,9 +17,10 @@ class LeaveApplicationServiceSpec extends Specification {
     LeaveApplicationService leaveApplicationService
     LeaveApplicationRepository leaveApplicationRepository = Mock()
     EmployeeService employeeService = Mock()
+    LeaveQuantityModifier leaveQuantityModifier = Mock()
 
     def setup(){
-        leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService)
+        leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService, leaveQuantityModifier)
     }
 
     def "getAllLeaveApplications should return a paginated list of all leave applications"(){
@@ -219,5 +220,105 @@ class LeaveApplicationServiceSpec extends Specification {
         1 * leaveApplicationRepository.findAllByManager(managerObject, pageable) >> leaveApplicationPage
         totalCount == response.getTotalElements()
         leaveApplicationList == response.getContent()
+    }
+
+    def "getLeavesByEmployee should throw a ResourceNotFoundException when no employee is associated with the given ID"(){
+        given:
+        int page = 1
+        int max = 10
+        Long employeeId = 1
+
+        employeeService.getEmployeeById(employeeId) >> Optional.empty()
+
+        when:
+        leaveApplicationService.getLeavesByEmployee(max, page, employeeId)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "getLeavesByEmployee should return a paginated list of leaves by the employee"(){
+        given:
+        int passedPage = 1
+        int subtractedPage = 0
+        int max = 10
+        int totalCount = 2
+
+        Long employeeId = 1
+        String employeeFirstName = "John"
+        String employeeLastName = "Doe"
+
+        Long managerId = 1
+        String managerFirstName = "Man"
+        String managerLastName = "Doe"
+
+        Long id1 = 1
+        LocalDate startDate1 = LocalDate.now()
+        LocalDate endDate1 = LocalDate.now()
+        int workDays1 = 1
+        String reason1 = "Reason 1"
+        LeaveApplicationStatus status1 = LeaveApplicationStatus.APPROVED
+
+        Long id2 = 2
+        LocalDate startDate2 = LocalDate.now().plusDays(1)
+        LocalDate endDate2 = LocalDate.now().plusDays(3)
+        int workDays2 = 2
+        String reason2 = "Reason 2"
+        LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
+
+        Employee employeeObj = Mock(Employee){
+            id >> employeeId
+            firstName >> employeeFirstName
+            lastName >> employeeLastName
+        }
+
+        Employee managerObj = Mock(Employee){
+            id >> managerId
+            firstName >> managerFirstName
+            lastName >> managerLastName
+            role >> EmployeeRole.MANAGER
+        }
+
+        LeaveApplication leaveApplication1 = Mock() {
+            id >> id1
+            employee >> employeeObj
+            manager >> managerObj
+            startDate >> startDate1
+            endDate >> endDate1
+            workDays >> workDays1
+            reason >> reason1
+            status >> status1
+        }
+
+        LeaveApplication leaveApplication2 = Mock() {
+            id >> id2
+            employee >> employeeObj
+            manager >> managerObj
+            startDate >> startDate2
+            endDate >> endDate2
+            workDays >> workDays2
+            reason >> reason2
+            status >> status2
+        }
+
+        List<LeaveApplication> leaveApplicationList = [leaveApplication1, leaveApplication2]
+        Page<LeaveApplication> leaveApplicationPage = Mock() {
+            content >> leaveApplicationList
+            totalElements >> totalCount
+        }
+
+        Pageable pageable = PageRequest.of(subtractedPage, max, Sort.by("id"));
+
+        when:
+        Page<LeaveApplication> response =  leaveApplicationService.getLeavesByEmployee(max, passedPage, employeeId)
+
+        then:
+        1 * employeeService.getEmployeeById(employeeId) >> Optional.of(employeeObj)
+        1 * leaveApplicationRepository.findAllByEmployee(employeeObj, pageable) >> leaveApplicationPage
+
+        totalCount == response.getTotalElements()
+        leaveApplicationList == response.getContent()
+
+
     }
 }

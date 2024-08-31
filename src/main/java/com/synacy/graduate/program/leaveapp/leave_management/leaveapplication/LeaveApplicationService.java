@@ -47,6 +47,13 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAllByManager(manager, pageable);
     }
 
+    Page<LeaveApplication> getLeavesByEmployee(int max, int page, Long employeeId) {
+        Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
+        Employee employee = employeeService.getEmployeeById(employeeId)
+                .orElseThrow(ResourceNotFoundException::new);
+        return leaveApplicationRepository.findAllByEmployee(employee, pageable);
+    }
+
     Page<LeaveApplication> getAllLeaveApplications(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         return leaveApplicationRepository.findAll(pageable);

@@ -68,6 +68,29 @@ public class LeaveApplicationController {
         }
     }
 
+    @GetMapping("/api/v1/leave/employee/{id}")
+    public PageResponse<EmployeeLeaveApplicationResponse> getLeaveByEmployee(
+            @RequestParam(name = "max", defaultValue = "2")
+            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @RequestParam(name = "page", defaultValue = "1")
+            @Min(value = 1, message = "Page must be greater than 1") Integer page,
+            @PathVariable(name = "id") Long employeeId
+    ){
+        try{
+            Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByEmployee(max, page, employeeId);
+            long count = leaveApplications.getTotalElements();
+            List<EmployeeLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
+                    .getContent()
+                    .stream()
+                    .map(EmployeeLeaveApplicationResponse::new)
+                    .collect(Collectors.toList());
+
+            return new PageResponse<>(count, page, leaveApplicationResponseList);
+        } catch (ResourceNotFoundException e){
+            throw new InvalidRequestException("No employee is associated with the ID");
+        }
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("api/v1/leave")
     public EmployeeLeaveApplicationResponse createLeaveApplication(@RequestBody @Valid CreateLeaveApplicationRequest createLeaveApplicationRequest) {
