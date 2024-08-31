@@ -222,6 +222,21 @@ class LeaveApplicationServiceSpec extends Specification {
         leaveApplicationList == response.getContent()
     }
 
+    def "getLeavesByEmployee should throw a ResourceNotFoundException when no employee is associated with the given ID"(){
+        given:
+        int page = 1
+        int max = 10
+        Long employeeId = 1
+
+        employeeService.getEmployeeById(employeeId) >> Optional.empty()
+
+        when:
+        leaveApplicationService.getLeavesByEmployee(max, page, employeeId)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
     def "getLeavesByEmployee should return a paginated list of leaves by the employee"(){
         given:
         int passedPage = 1
