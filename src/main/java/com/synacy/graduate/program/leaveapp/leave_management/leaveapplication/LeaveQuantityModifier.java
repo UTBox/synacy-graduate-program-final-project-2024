@@ -15,7 +15,7 @@ public class LeaveQuantityModifier {
         this.employeeService = employeeService;
     }
 
-    public void deductLeaveQuantityBasedOnApprovedRequest(LeaveApplication leaveApplication) {
+    public void deductLeaveQuantityBasedOnLeaveRequest(LeaveApplication leaveApplication) {
         Employee employee = employeeService
                 .getEmployeeById(leaveApplication.getEmployee().getId())
                 .orElseThrow(ResourceNotFoundException::new);
