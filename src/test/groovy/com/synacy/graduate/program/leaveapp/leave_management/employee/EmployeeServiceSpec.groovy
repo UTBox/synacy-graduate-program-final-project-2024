@@ -282,4 +282,24 @@ class EmployeeServiceSpec extends Specification {
             assert isDeleted == employee.getIsDeleted()
         }
     }
+
+    def "updateEmployee should throw InvalidUpdatedTotalLeaves if updated value of totalLeaves is less than availableLeaves"() {
+        given:
+        Integer availableLeaves = 20
+        Integer updatedTotalLeaves = 15
+
+        Employee employee = Mock()
+        employee.getAvailableLeaves() >> availableLeaves
+
+        UpdateEmployeeRequest updateEmployeeRequest = Mock()
+        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
+
+        employeeService.isInvalidTotalLeaveCredits(employee, updateEmployeeRequest.getTotalLeaveCredits()) >> true
+
+        when:
+        employeeService.updateEmployee(employee, updateEmployeeRequest)
+
+        then:
+        thrown(InvalidUpdatedTotalLeavesException)
+    }
 }
