@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface LeaveApplicationRepository extends JpaRepository<LeaveApplication, Long> {
 
     Page<LeaveApplication> findAllByManager(Employee manager, Pageable pageable);
+    Page<LeaveApplication> findAllByEmployee(Employee employee, Pageable pageable);
 }
