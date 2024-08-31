@@ -15,25 +15,32 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 public class LeaveApplicationService {
 
     private final LeaveApplicationRepository leaveApplicationRepository;
     private final EmployeeService employeeService;
+    private final LeaveQuantityModifier leaveQuantityModifier;
 
     @Autowired
-    public LeaveApplicationService(LeaveApplicationRepository leaveApplicationRepository, EmployeeService employeeService) {
+    public LeaveApplicationService(
+            LeaveApplicationRepository leaveApplicationRepository,
+            EmployeeService employeeService,
+            LeaveQuantityModifier leaveQuantityModifier
+    ) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.employeeService = employeeService;
+        this.leaveQuantityModifier = leaveQuantityModifier;
     }
 
-    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId){
+    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         Employee manager = employeeService.getEmployeeById(managerId)
                 .orElseThrow(ResourceNotFoundException::new);
 
-        if(manager.getRole() != EmployeeRole.MANAGER){
+        if (manager.getRole() != EmployeeRole.MANAGER) {
             throw new NotAManagerException();
         }
 
@@ -66,6 +73,34 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.save(leaveApplication);
     }
 
+    @Transactional
+    LeaveApplication updateLeaveApplication(LeaveApplication leave, UpdateLeaveApplicationRequest request) {
+        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
+            throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
+        }
+
+        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
+            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        }
+
+        leave.setStatus(request.getLeaveApplicationStatus());
+        return leaveApplicationRepository.save(leave);
+    }
+
+    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
+        return leaveApplicationRepository.findById(id);
+    }
+
+    @Transactional
+    void cancelLeaveApplication(LeaveApplication leave) {
+        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
+            throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
+        }
+        leave.cancelLeave();
+        leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        leaveApplicationRepository.save(leave);
+    }
+
     private static LeaveApplication setLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest, Integer leaveWorkDays) {
         LeaveApplication leaveApplication = new LeaveApplication();
         leaveApplication.setEmployee(employee);
@@ -84,7 +119,7 @@ public class LeaveApplicationService {
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
 
-        while(!currentDate.isAfter(endDate)) {
+        while (!currentDate.isAfter(endDate)) {
             if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY && currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
                 leaveWorkDays++;
             }

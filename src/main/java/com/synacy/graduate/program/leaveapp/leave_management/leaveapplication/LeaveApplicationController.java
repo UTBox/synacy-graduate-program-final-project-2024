@@ -9,7 +9,6 @@ import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.Resour
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +32,7 @@ public class LeaveApplicationController {
             @Min(value = 1, message = "Max must be greater than 1") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page
-    ){
+    ) {
         Page<LeaveApplication> leaveApplications = leaveApplicationService.getAllLeaveApplications(max, page);
         long totalCount = leaveApplications.getTotalElements();
         List<ManagerialLeaveApplicationResponse> leaveApplicationList = leaveApplications
@@ -51,8 +50,8 @@ public class LeaveApplicationController {
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
             @PathVariable(name = "id") Long managerId
-    ){
-        try{
+    ) {
+        try {
             Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByManager(max, page, managerId);
             long count = leaveApplications.getTotalElements();
             List<ManagerialLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
@@ -62,9 +61,9 @@ public class LeaveApplicationController {
                     .collect(Collectors.toList());
 
             return new PageResponse<>(count, page, leaveApplicationResponseList);
-        } catch (NotAManagerException e){
+        } catch (NotAManagerException e) {
             throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
-        } catch (ResourceNotFoundException e){
+        } catch (ResourceNotFoundException e) {
             throw new InvalidRequestException("No employee is associated with the ID");
         }
     }
@@ -86,4 +85,31 @@ public class LeaveApplicationController {
 
         return new EmployeeLeaveApplicationResponse(leaveApplication);
     }
+
+    @PutMapping("/api/v1/leave/{id}")
+    public EmployeeLeaveApplicationResponse updateLeaveApplication(
+            @PathVariable(name = "id") Long id,
+            @Valid @RequestBody UpdateLeaveApplicationRequest updateLeaveApplicationRequest) {
+        LeaveApplication existingLeaveApplication =
+                leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
+        try {
+            LeaveApplication leaveApplication = leaveApplicationService.updateLeaveApplication(existingLeaveApplication, updateLeaveApplicationRequest);
+            return new EmployeeLeaveApplicationResponse(leaveApplication);
+
+        } catch (InvalidLeaveApplicationStatusException e) {
+            throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+        }
+    }
+
+    @DeleteMapping("api/v1/leave/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelLeaveApplication(@PathVariable(name = "id") Long id) {
+        LeaveApplication leave = leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
+        try {
+            leaveApplicationService.cancelLeaveApplication(leave);
+        } catch (InvalidLeaveApplicationStatusException e) {
+            throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+        }
+    }
+
 }
