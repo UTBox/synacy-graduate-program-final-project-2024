@@ -17,11 +17,11 @@ class LeaveApplicationControllerSpec extends Specification {
     LeaveApplicationService leaveApplicationService = Mock()
     EmployeeService employeeService = Mock()
 
-    def setup(){
+    def setup() {
         leaveApplicationController = new LeaveApplicationController(leaveApplicationService, employeeService)
     }
 
-    def "getLeaveApplications should return a paginated list of all leave applications"(){
+    def "getLeaveApplications should return a paginated list of all leave applications"() {
         given:
         int max = 10;
         int page = 1;
@@ -57,22 +57,22 @@ class LeaveApplicationControllerSpec extends Specification {
         String reason2 = "Reason"
         LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
 
-        Employee employee1 = Mock(){
+        Employee employee1 = Mock() {
             id >> employeeId1
             firstName >> employeeFirstName1
             lastName >> employeeLastName1
         }
-        Employee employee2 = Mock(){
+        Employee employee2 = Mock() {
             id >> employeeId2
             firstName >> employeeFirstName2
             lastName >> employeeLastName2
         }
-        Employee manager1 = Mock(){
+        Employee manager1 = Mock() {
             id >> managerId1
             firstName >> managerFirstName1
             lastName >> managerLastName1
         }
-        Employee manager2 = Mock(){
+        Employee manager2 = Mock() {
             id >> managerId2
             firstName >> managerFirstName2
             lastName >> managerLastName2
@@ -101,7 +101,7 @@ class LeaveApplicationControllerSpec extends Specification {
 
         List<LeaveApplication> leaveList = [leave1, leave2]
 
-        Page<LeaveApplication> paginatedLeaves = Mock(){
+        Page<LeaveApplication> paginatedLeaves = Mock() {
             content >> leaveList
             totalElements >> totalCount
         }
@@ -132,7 +132,8 @@ class LeaveApplicationControllerSpec extends Specification {
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
     }
-    def "getLeavesByManager should throw an InvalidOperationException when the role of the provided ID is not MANAGER"(){
+
+    def "getLeavesByManager should throw an InvalidOperationException when the role of the provided ID is not MANAGER"() {
         given:
         int page = 1
         int max = 10
@@ -150,7 +151,7 @@ class LeaveApplicationControllerSpec extends Specification {
         errorCode == e.errorCode
     }
 
-    def "getLeavesByManager should throw an InvalidRequestException when no employee is associated with the given ID"(){
+    def "getLeavesByManager should throw an InvalidRequestException when no employee is associated with the given ID"() {
         given:
         int max = 10
         int page = 1
@@ -165,7 +166,7 @@ class LeaveApplicationControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"(){
+    def "getLeavesByManager should return a paginated leave applications of all employees under the direct supervision of the given manager"() {
         given:
         int max = 10
         int page = 1
@@ -196,15 +197,15 @@ class LeaveApplicationControllerSpec extends Specification {
         String reason2 = "Reason 1"
         LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
 
-        Employee employee1 = Mock(Employee){
+        Employee employee1 = Mock(Employee) {
             firstName >> employeeFirstName1
             lastName >> employeeLastName1
         }
-        Employee employee2 = Mock(Employee){
+        Employee employee2 = Mock(Employee) {
             firstName >> employeeFirstName2
             lastName >> employeeLastName2
         }
-        Employee managerObject = Mock(Employee){
+        Employee managerObject = Mock(Employee) {
             id >> managerId
             firstName >> managerFirstName
             lastName >> managerLastName
@@ -259,5 +260,67 @@ class LeaveApplicationControllerSpec extends Specification {
         workDays2 == response.content()[1].getWorkDays()
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
+    }
+
+    def "updateLeaveApplication should throw a ResourceNotFoundException when leave application does not exist"() {
+        given:
+        Long id = 1
+        UpdateLeaveApplicationRequest updateLeaveRequest = Mock(UpdateLeaveApplicationRequest)
+
+        leaveApplicationService.getLeaveApplicationById(id) >> Optional.empty()
+
+        when:
+        leaveApplicationController.updateLeaveApplication(id, updateLeaveRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "updateLeaveApplication should update and return the leave application request when leave application with given id exists"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication existingLeave = Mock(LeaveApplication) {
+            id >> leaveId
+            status >> LeaveApplicationStatus.PENDING
+        }
+
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest) {
+            status >> LeaveApplicationStatus.APPROVED
+        }
+
+        LeaveApplication updatedLeave = Mock(LeaveApplication) {
+            id >> leaveId
+            status >> LeaveApplicationStatus.APPROVED
+        }
+
+        leaveApplicationService.getLeaveApplicationById(leaveId) >> Optional.of(existingLeave)
+
+        when:
+        EmployeeLeaveApplicationResponse result = leaveApplicationController.updateLeaveApplication(leaveId, request)
+
+        then:
+        1 * leaveApplicationService.updateLeaveApplication(existingLeave, request) >> updatedLeave
+        LeaveApplicationStatus.APPROVED == result.status
+    }
+
+    def "updateLeaveApplication should throw an InvalidOperationException when the status of leave application to update is not PENDING"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication existingLeave = Mock(LeaveApplication) {
+            id >> leaveId
+            status >> LeaveApplicationStatus.APPROVED
+        }
+
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest)
+
+        leaveApplicationService.getLeaveApplicationById(leaveId) >> Optional.of(existingLeave)
+        leaveApplicationService.updateLeaveApplication(existingLeave, request) >>
+                { throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.") }
+
+        when:
+        leaveApplicationController.updateLeaveApplication(leaveId, request)
+
+        then:
+        thrown(InvalidOperationException)
     }
 }
