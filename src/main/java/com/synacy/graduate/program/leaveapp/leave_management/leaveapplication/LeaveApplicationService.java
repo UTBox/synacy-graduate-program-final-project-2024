@@ -1,7 +1,6 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRepository;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
@@ -59,6 +58,10 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAll(pageable);
     }
 
+    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
+        return leaveApplicationRepository.findById(id);
+    }
+
     @Transactional
     LeaveApplication createLeaveApplication(
             CreateLeaveApplicationRequest createLeaveApplicationRequest
@@ -85,16 +88,21 @@ public class LeaveApplicationService {
             throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
         }
 
-        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
-            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        switch (request.getStatus()) {
+            case REJECTED:
+                leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+                leave.setStatus(LeaveApplicationStatus.REJECTED);
+                break;
+
+            case APPROVED:
+                leave.setStatus(LeaveApplicationStatus.APPROVED);
+                break;
+
+            case CANCELLED:
+                break;
         }
 
-        leave.setStatus(request.getLeaveApplicationStatus());
         return leaveApplicationRepository.save(leave);
-    }
-
-    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
-        return leaveApplicationRepository.findById(id);
     }
 
     @Transactional

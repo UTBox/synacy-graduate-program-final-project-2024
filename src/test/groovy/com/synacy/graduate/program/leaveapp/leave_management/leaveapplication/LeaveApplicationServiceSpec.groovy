@@ -321,4 +321,75 @@ class LeaveApplicationServiceSpec extends Specification {
 
 
     }
+
+    def "getLeaveApplicationById should return a leave application with the given existing id"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication leave = Mock(LeaveApplication) {
+            id >> leaveId
+        }
+
+        when:
+        Optional<LeaveApplication> result = leaveApplicationService.getLeaveApplicationById(1L)
+
+        then:
+        1 * leaveApplicationRepository.findById(_) >> Optional.of(leave)
+        leaveId == result.get().id
+    }
+
+    def "updateLeaveApplication should throw an InvalidLeaveApplicationStatusException when status of leave application to update is not PENDING"() {
+        given:
+        LeaveApplication leave = Mock(LeaveApplication) {
+            status >> leaveStatus
+        }
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest)
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        thrown(InvalidLeaveApplicationStatusException)
+
+        where:
+        leaveStatus << [LeaveApplicationStatus.APPROVED, LeaveApplicationStatus.REJECTED, LeaveApplicationStatus.CANCELLED]
+    }
+
+    def "updateLeaveApplication should not modify the leave quantity when leave request status is not REJECTED"() {
+        given:
+        LeaveApplication leave = Mock(LeaveApplication) {
+            status >> LeaveApplicationStatus.PENDING
+        }
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest) {
+            status >> requestStatus
+        }
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        0 * leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave)
+
+        where:
+        requestStatus << [LeaveApplicationStatus.APPROVED, LeaveApplicationStatus.CANCELLED]
+    }
+
+    def "updateLeaveApplication should update and save the leave application when status is PENDING"() {
+        given:
+        LeaveApplicationStatus expectedStatus = LeaveApplicationStatus.REJECTED
+        LeaveApplication leave = new LeaveApplication()
+        leave.status = LeaveApplicationStatus.PENDING
+
+        UpdateLeaveApplicationRequest request = Mock(UpdateLeaveApplicationRequest) {
+            status >> expectedStatus
+        }
+
+        when:
+        leaveApplicationService.updateLeaveApplication(leave, request)
+
+        then:
+        1 * leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave)
+        1 * leaveApplicationRepository.save(_) >> { LeaveApplication passed ->
+            assert expectedStatus == passed.status
+        }
+    }
 }
