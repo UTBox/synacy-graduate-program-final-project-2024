@@ -3,6 +3,7 @@ package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole;
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
+import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -33,12 +34,12 @@ public class LeaveApplicationService {
         this.leaveQuantityModifier = leaveQuantityModifier;
     }
 
-    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId){
+    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         Employee manager = employeeService.getEmployeeById(managerId)
                 .orElseThrow(ResourceNotFoundException::new);
 
-        if(manager.getRole() != EmployeeRole.MANAGER){
+        if (manager.getRole() != EmployeeRole.MANAGER) {
             throw new NotAManagerException();
         }
 
@@ -85,7 +86,7 @@ public class LeaveApplicationService {
         Integer leaveWorkDays = 0;
         LocalDate currentDate = startDate;
 
-        while(!currentDate.isAfter(endDate)) {
+        while (!currentDate.isAfter(endDate)) {
             if (currentDate.getDayOfWeek() != DayOfWeek.SATURDAY && currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
                 leaveWorkDays++;
             }
@@ -101,11 +102,20 @@ public class LeaveApplicationService {
             throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
         }
 
-        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
-            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        switch (request.getStatus()) {
+            case REJECTED:
+                leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+                leave.setStatus(LeaveApplicationStatus.REJECTED);
+                break;
+
+            case APPROVED:
+                leave.setStatus(LeaveApplicationStatus.APPROVED);
+                break;
+
+            case CANCELLED:
+                break;
         }
 
-        leave.setStatus(request.getLeaveApplicationStatus());
         return leaveApplicationRepository.save(leave);
     }
 
