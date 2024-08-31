@@ -15,10 +15,9 @@ class LeaveApplicationControllerSpec extends Specification {
 
     LeaveApplicationController leaveApplicationController
     LeaveApplicationService leaveApplicationService = Mock()
-    EmployeeService employeeService = Mock()
 
     def setup(){
-        leaveApplicationController = new LeaveApplicationController(leaveApplicationService, employeeService)
+        leaveApplicationController = new LeaveApplicationController(leaveApplicationService)
     }
 
     def "getLeaveApplications should return a paginated list of all leave applications"(){
