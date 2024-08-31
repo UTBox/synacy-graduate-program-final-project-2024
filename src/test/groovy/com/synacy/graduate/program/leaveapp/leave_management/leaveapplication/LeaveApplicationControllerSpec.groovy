@@ -260,4 +260,93 @@ class LeaveApplicationControllerSpec extends Specification {
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
     }
+    
+    def "getLeaveByEmployee should return a paginated list of leaves by the employee"(){
+        given:
+        int max = 10
+        int page = 1
+        int totalCount = 2
+        
+        int employeeId = 1
+        String employeeFirstName = "John"
+        String employeeLastName = "Doe"
+        String employeeName = "John Doe"
+        
+        Long managerId = 1
+        String managerFirstName = "Man"
+        String managerLastName = "Doe"
+
+        Long id1 = 1
+        LocalDate startDate1 = LocalDate.now()
+        LocalDate endDate1 = LocalDate.now()
+        int workDays1 = 1
+        String reason1 = "Reason 1"
+        LeaveApplicationStatus status1 = LeaveApplicationStatus.APPROVED
+
+        Long id2 = 2
+        LocalDate startDate2 = LocalDate.now()
+        LocalDate endDate2 = LocalDate.now()
+        int workDays2 = 1
+        String reason2 = "Reason 1"
+        LeaveApplicationStatus status2 = LeaveApplicationStatus.APPROVED
+
+        Employee employeeObj = Mock(Employee){
+            id >> employeeId
+            firstName >> employeeFirstName
+            lastName >> employeeLastName
+        }
+        Employee managerObject = Mock(Employee){
+            id >> managerId
+            firstName >> managerFirstName
+            lastName >> managerLastName
+        }
+
+        LeaveApplication leaveApplication1 = Mock() {
+            id >> id1
+            employee >> employeeObj
+            manager >> managerObject
+            startDate >> startDate1
+            endDate >> endDate1
+            workDays >> workDays1
+            reason >> reason1
+            status >> status1
+        }
+
+        LeaveApplication leaveApplication2 = Mock() {
+            id >> id2
+            employee >> employeeObj
+            manager >> managerObject
+            startDate >> startDate2
+            endDate >> endDate2
+            workDays >> workDays2
+            reason >> reason2
+            status >> status2
+        }
+
+        List<LeaveApplication> leaveApplicationList = [leaveApplication1, leaveApplication2]
+        Page<LeaveApplication> leaveApplicationPage = Mock() {
+            content >> leaveApplicationList
+            totalElements >> totalCount
+        }
+
+        when:
+        PageResponse<EmployeeLeaveApplicationResponse> response =  leaveApplicationController.getLeaveByEmployee(max, page, employeeId)
+
+        then:
+        1 * leaveApplicationService.getLeavesByEmployee(max, page, employeeId) >> leaveApplicationPage
+        totalCount == response.totalCount()
+        page == response.pageNumber()
+
+        startDate1 == response.content()[0].getStartDate()
+        endDate1 == response.content()[0].getEndDate()
+        workDays1 == response.content()[0].getWorkDays()
+        reason1 == response.content()[0].getReason()
+        status1 == response.content()[0].getStatus()
+
+        startDate2 == response.content()[1].getStartDate()
+        endDate2 == response.content()[1].getEndDate()
+        workDays2 == response.content()[1].getWorkDays()
+        reason2 == response.content()[1].getReason()
+        status2 == response.content()[1].getStatus()
+    }
 }
