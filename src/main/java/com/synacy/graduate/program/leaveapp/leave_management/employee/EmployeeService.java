@@ -70,15 +70,6 @@ public class EmployeeService {
         return employeeRepository.save(selectedEmployee);
     }
 
-    public void subtractEmployeeAvailableLeaveCredits(Employee employee, Integer leaveWorkDays) {
-        if (employee.getAvailableLeaves() < leaveWorkDays) {
-            throw new InvalidLeaveApplicationException("Employee has insufficient leave credits");
-        } else {
-            employee.setAvailableLeaves(employee.getAvailableLeaves() - leaveWorkDays);
-            employeeRepository.save(employee);
-        }
-    }
-
     private void createInitialEmployees() {
         employeeRepository.saveAll(employeesList);
     }
