@@ -62,7 +62,7 @@ public class EmployeeService {
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
         int originalTotalLeaves = selectedEmployee.getTotalLeaves();
-        int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaveCredits();
+        int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaves();
         int diffBetweenOriginalAndUpdatedTotalLeaves = originalTotalLeaves - updatedTotalLeaves;
 
         int currentAvailableLeaves = selectedEmployee.getAvailableLeaves();
