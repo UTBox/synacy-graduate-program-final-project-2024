@@ -31,9 +31,10 @@ public class EmployeeService {
         return employeeRepository.findById(employeeId);
     }
 
-    public List<Employee> getManagers(){
+    public List<Employee> getManagers() {
         return employeeRepository.findFirst10Managers();
     }
+
     public List<Employee> getManagersByName(String name) {
         return employeeRepository.findFirst10ManagersByName(name);
     }
@@ -42,11 +43,11 @@ public class EmployeeService {
 
         Employee employee = new Employee();
 
-        if(createEmployeeRequest.getRole() == EmployeeRole.HR_ADMIN){
+        if (createEmployeeRequest.getRole() == EmployeeRole.HR_ADMIN) {
             handleCreateHrAdmin();
-        } else if (createEmployeeRequest.getRole() == EmployeeRole.MANAGER){
+        } else if (createEmployeeRequest.getRole() == EmployeeRole.MANAGER) {
             handleCreateManager(employee, createEmployeeRequest);
-        } else if (createEmployeeRequest.getRole() == EmployeeRole.EMPLOYEE){
+        } else if (createEmployeeRequest.getRole() == EmployeeRole.EMPLOYEE) {
             handleCreateEmployee(employee, createEmployeeRequest);
         }
 
@@ -61,11 +62,15 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        if (isInvalidTotalLeaveCredits(selectedEmployee, updateEmployeeRequest.getTotalLeaveCredits())) {
+        int updatedTotalLeaveCredits = updateEmployeeRequest.getTotalLeaveCredits();
+        if (isInvalidTotalLeaveCredits(selectedEmployee, updatedTotalLeaveCredits)) {
             throw new InvalidUpdatedTotalLeavesException();
         }
 
-        selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
+        int diffBetweenOriginalAndUpdatedTotalLeaveCredits = selectedEmployee.getTotalLeaves() - updatedTotalLeaveCredits;
+        int updatedAvailableLeaves = selectedEmployee.getAvailableLeaves() - diffBetweenOriginalAndUpdatedTotalLeaveCredits;
+        selectedEmployee.setTotalLeaves(updatedTotalLeaveCredits);
+        selectedEmployee.setAvailableLeaves(updatedAvailableLeaves);
 
         return employeeRepository.save(selectedEmployee);
     }
@@ -81,7 +86,7 @@ public class EmployeeService {
     private void handleCreateManager(Employee employee, CreateEmployeeRequest createEmployeeRequest) {
         Employee manager;
 
-        if(createEmployeeRequest.getManagerId() == null) {
+        if (createEmployeeRequest.getManagerId() == null) {
             manager = employeeRepository.findByIdAndIsDeletedIsFalse(1L).get();
         } else {
             manager = employeeRepository.findByIdAndIsDeletedIsFalse(createEmployeeRequest.getManagerId())
@@ -89,7 +94,7 @@ public class EmployeeService {
 
         }
 
-        if(manager.getRole() == EmployeeRole.EMPLOYEE ) {
+        if (manager.getRole() == EmployeeRole.EMPLOYEE) {
             throw new NotManagerException();
         }
 
@@ -97,14 +102,14 @@ public class EmployeeService {
     }
 
     private void handleCreateEmployee(Employee employee, CreateEmployeeRequest createEmployeeRequest) {
-        if(createEmployeeRequest.getManagerId() == null) {
+        if (createEmployeeRequest.getManagerId() == null) {
             throw new NoManagerException();
         }
 
         Employee manager = employeeRepository.findByIdAndIsDeletedIsFalse(createEmployeeRequest.getManagerId())
                 .orElseThrow(ResourceNotFoundException::new);
 
-        if(manager.getRole() == EmployeeRole.EMPLOYEE || manager.getRole() == EmployeeRole.HR_ADMIN) {
+        if (manager.getRole() == EmployeeRole.EMPLOYEE || manager.getRole() == EmployeeRole.HR_ADMIN) {
             throw new NotManagerException();
         }
 
