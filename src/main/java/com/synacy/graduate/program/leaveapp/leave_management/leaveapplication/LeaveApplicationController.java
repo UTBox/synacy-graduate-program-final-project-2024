@@ -115,8 +115,11 @@ public class LeaveApplicationController {
             LeaveApplication leaveApplication = leaveApplicationService.updateLeaveApplication(existingLeaveApplication, updateLeaveApplicationRequest);
             return new EmployeeLeaveApplicationResponse(leaveApplication);
 
-        } catch (InvalidLeaveApplicationStatusException e) {
+        } catch (StatusNotPendingException e) {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+
+        } catch (InvalidLeaveApplicationException e) {
+            throw new InvalidOperationException("CANCELLATION_NOT_ALLOWED", e.getMessage());
         }
     }
 
@@ -126,7 +129,7 @@ public class LeaveApplicationController {
         LeaveApplication leave = leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
         try {
             leaveApplicationService.cancelLeaveApplication(leave);
-        } catch (InvalidLeaveApplicationStatusException e) {
+        } catch (StatusNotPendingException e) {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
         }
     }
