@@ -337,7 +337,7 @@ class LeaveApplicationServiceSpec extends Specification {
         leaveId == result.get().id
     }
 
-    def "updateLeaveApplication should throw an InvalidLeaveApplicationStatusException when status of leave application to update is not PENDING"() {
+    def "updateLeaveApplication should throw an StatusNotPendingException when status of leave application to update is not PENDING"() {
         given:
         LeaveApplication leave = Mock(LeaveApplication) {
             status >> leaveStatus
@@ -407,5 +407,36 @@ class LeaveApplicationServiceSpec extends Specification {
 
         then:
         thrown(InvalidLeaveApplicationException)
+    }
+
+    def "cancelLeaveApplication should throw a StatusNotPendingException when status of leave application to cancel is not PENDING"() {
+        given:
+        LeaveApplication leave = Mock(LeaveApplication) {
+            status >> leaveStatus
+        }
+
+        when:
+        leaveApplicationService.cancelLeaveApplication(leave)
+
+        then:
+        thrown(StatusNotPendingException)
+
+        where:
+        leaveStatus << [LeaveApplicationStatus.APPROVED, LeaveApplicationStatus.REJECTED, LeaveApplicationStatus.CANCELLED]
+    }
+
+    def "cancelLeaveApplication should cancel and save the leave application when leave application status is PENDING"() {
+        given:
+        LeaveApplication leave = new LeaveApplication()
+        leave.status = LeaveApplicationStatus.PENDING
+
+        when:
+        leaveApplicationService.cancelLeaveApplication(leave)
+
+        then:
+        1 * leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave)
+        1 * leaveApplicationRepository.save(leave) >> { LeaveApplication savedLeave ->
+            assert LeaveApplicationStatus.CANCELLED == savedLeave.status
+        }
     }
 }
