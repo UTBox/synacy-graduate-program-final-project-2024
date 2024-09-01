@@ -47,11 +47,11 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/manager")
-    public List<ManagerResponse> getManager(@RequestParam(required = false) String name){
+    public List<ManagerResponse> getManager(@RequestParam(required = false) String name) {
 
         List<Employee> managersList;
 
-        if(name != null) {
+        if (name != null) {
             managersList = employeeService.getManagersByName(name);
         } else {
             managersList = employeeService.getManagers();
@@ -79,7 +79,7 @@ public class EmployeeController {
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
-    public EmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+    public EmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @Valid @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
