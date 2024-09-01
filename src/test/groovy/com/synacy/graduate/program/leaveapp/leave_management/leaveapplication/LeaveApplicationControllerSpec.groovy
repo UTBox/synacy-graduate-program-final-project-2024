@@ -6,6 +6,7 @@ import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.cglib.core.Local
 import org.springframework.data.domain.Page
 import spock.lang.Specification
 
@@ -132,6 +133,7 @@ class LeaveApplicationControllerSpec extends Specification {
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
     }
+
     def "getLeavesByManager should throw an InvalidOperationException when the role of the provided ID is not MANAGER"(){
         given:
         int page = 1
@@ -259,5 +261,31 @@ class LeaveApplicationControllerSpec extends Specification {
         workDays2 == response.content()[1].getWorkDays()
         reason2 == response.content()[1].getReason()
         status2 == response.content()[1].getStatus()
+    }
+
+    def "createLeaveApplication should throw InvalidOperationException with appropriate errorCode if #outputDescription"() {
+        given:
+        String expectedErrorCode = "INVALID_LEAVE_DATES"
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+        }
+
+        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new InvalidLeaveDateException() }
+
+        when:
+        leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        def exception = thrown(InvalidOperationException)
+        expectedErrorCode == exception.errorCode
+
+        where:
+                 startDate           |         endDate         |   outputDescription
+                   null              |           null          | "startDate or endDate is null"
+        LocalDate.now().plusDays(2)  |      LocalDate.now()    | "startDate is set after endDate"
+        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  | "startDate is set before the current date"
+               LocalDate.now()       |  startDate.minusDays(1) | "endDate is set before the current date"
+               LocalDate.now()       |  startDate.plusDays(1)  | "employee has an existing leave application that overlaps with current request"
     }
 }
