@@ -300,6 +300,6 @@ class EmployeeServiceSpec extends Specification {
         employeeService.updateEmployee(employee, updateEmployeeRequest)
 
         then:
-        thrown(InvalidUpdatedTotalLeavesException)
+        thrown(LeaveCountModificationException)
     }
 }

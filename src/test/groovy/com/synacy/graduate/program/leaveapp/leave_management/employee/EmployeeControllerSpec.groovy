@@ -384,7 +384,7 @@ class EmployeeControllerSpec extends Specification {
         employee.getAvailableLeaves() >> availableLeaves
 
         employeeService.getEmployeeById(id) >> Optional.of(employee)
-        employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new InvalidUpdatedTotalLeavesException() }
+        employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
 
         when:
         employeeController.updateEmployee(id, updateEmployeeRequest)
