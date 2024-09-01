@@ -1,6 +1,5 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
-import com.synacy.graduate.program.leaveapp.leave_management.leaveapplication.InvalidLeaveApplicationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,14 +61,17 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        int updatedTotalLeaveCredits = updateEmployeeRequest.getTotalLeaveCredits();
-        if (isInvalidTotalLeaveCredits(selectedEmployee, updatedTotalLeaveCredits)) {
-            throw new InvalidUpdatedTotalLeavesException();
+        int originalTotalLeaves = selectedEmployee.getTotalLeaves();
+        int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaveCredits();
+        int diffBetweenOriginalAndUpdatedTotalLeaves = originalTotalLeaves - updatedTotalLeaves;
+
+        int currentAvailableLeaves = selectedEmployee.getAvailableLeaves();
+        int updatedAvailableLeaves = currentAvailableLeaves - diffBetweenOriginalAndUpdatedTotalLeaves;
+        if (updatedAvailableLeaves < 0) {
+            throw new LeaveCountModificationException("Insufficient available leaves: cannot reduce total leave credits");
         }
 
-        int diffBetweenOriginalAndUpdatedTotalLeaveCredits = selectedEmployee.getTotalLeaves() - updatedTotalLeaveCredits;
-        int updatedAvailableLeaves = selectedEmployee.getAvailableLeaves() - diffBetweenOriginalAndUpdatedTotalLeaveCredits;
-        selectedEmployee.setTotalLeaves(updatedTotalLeaveCredits);
+        selectedEmployee.setTotalLeaves(updatedTotalLeaves);
         selectedEmployee.setAvailableLeaves(updatedAvailableLeaves);
 
         return employeeRepository.save(selectedEmployee);
@@ -114,9 +116,5 @@ public class EmployeeService {
         }
 
         employee.setManager(manager);
-    }
-
-    private boolean isInvalidTotalLeaveCredits(Employee employee, Integer updatedTotalLeaves) {
-        return updatedTotalLeaves < employee.getAvailableLeaves();
     }
 }
