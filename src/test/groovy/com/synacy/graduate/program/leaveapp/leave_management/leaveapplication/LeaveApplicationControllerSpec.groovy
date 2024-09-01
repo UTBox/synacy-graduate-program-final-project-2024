@@ -451,4 +451,54 @@ class LeaveApplicationControllerSpec extends Specification {
         then:
         thrown(InvalidOperationException)
     }
+
+    def "cancelLeaveApplication should throw a ResourceNotFoundException when leave application of given id does not exist"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication leave = Mock(LeaveApplication) {
+            id >> leaveId
+        }
+
+        leaveApplicationService.getLeaveApplicationById(leaveId) >> Optional.empty()
+
+        when:
+        leaveApplicationController.cancelLeaveApplication(leaveId)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "cancelLeaveApplication should cancel the leave application when leave application exists"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication leave = Mock(LeaveApplication) {
+            id >> leaveId
+        }
+
+        leaveApplicationService.getLeaveApplicationById(leaveId) >> Optional.of(leave)
+
+        when:
+        leaveApplicationController.cancelLeaveApplication(leaveId)
+
+        then:
+        1 * leaveApplicationService.cancelLeaveApplication(leave)
+    }
+
+    def "cancelLeaveApplication should throw an InvalidOperationException when the leave status to cancel is not PENDING"() {
+        given:
+        Long leaveId = 1
+        LeaveApplication leave = Mock(LeaveApplication) {
+            id >> leaveId
+        }
+
+        leaveApplicationService.getLeaveApplicationById(leaveId) >> Optional.of(leave)
+        leaveApplicationService.cancelLeaveApplication(leave) >>
+                { throw new StatusNotPendingException("Leave application status is not PENDING.") }
+
+        when:
+        leaveApplicationController.cancelLeaveApplication(leaveId)
+
+        then:
+        thrown(InvalidOperationException)
+    }
 }
