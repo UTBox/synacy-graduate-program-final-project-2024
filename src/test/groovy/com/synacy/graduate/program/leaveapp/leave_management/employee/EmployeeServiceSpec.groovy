@@ -283,6 +283,29 @@ class EmployeeServiceSpec extends Specification {
         }
     }
 
+    def "updateEmployee should update employee's totalLeaves, save it in the employeeRepository, and return an Employee with the updated property"() {
+        given:
+        Integer availableLeaves = 15
+        Integer totalLeaves = 15
+        Integer updatedTotalLeaves = 20
+
+        Employee selectedEmployee = new Employee(availableLeaves: availableLeaves, totalLeaves: totalLeaves)
+
+        UpdateEmployeeRequest updateEmployeeRequest = Mock()
+        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
+
+        when:
+        Employee response = employeeService.updateEmployee(selectedEmployee, updateEmployeeRequest)
+
+        then:
+        1 * employeeRepository.save(selectedEmployee) >> { Employee updatedEmployee ->
+            assert updatedTotalLeaves == updatedEmployee.getTotalLeaves()
+            updatedEmployee
+        }
+
+        updatedTotalLeaves == response.getTotalLeaves()
+    }
+
     def "updateEmployee should throw InvalidUpdatedTotalLeaves if updated value of totalLeaves is less than availableLeaves"() {
         given:
         Integer availableLeaves = 20
