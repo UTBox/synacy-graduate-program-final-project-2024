@@ -71,10 +71,10 @@ public class LeaveApplicationController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("api/v1/leave")
     public EmployeeLeaveApplicationResponse createLeaveApplication(@RequestBody @Valid CreateLeaveApplicationRequest createLeaveApplicationRequest) {
-        LeaveApplication leaveApplication;
-
         try {
-            leaveApplication = leaveApplicationService.createLeaveApplication(createLeaveApplicationRequest);
+            LeaveApplication leaveApplication = leaveApplicationService.createLeaveApplication(createLeaveApplicationRequest);
+
+            return new EmployeeLeaveApplicationResponse(leaveApplication);
         } catch (InvalidLeaveDateException e) {
             throw new InvalidOperationException("INVALID_LEAVE_DATES", e.getMessage());
         } catch (InvalidLeaveApplicationException e) {
@@ -82,8 +82,6 @@ public class LeaveApplicationController {
         } catch (ResourceNotFoundException e) {
             throw new InvalidRequestException("Employee does not exist");
         }
-
-        return new EmployeeLeaveApplicationResponse(leaveApplication);
     }
 
     @PutMapping("/api/v1/leave/{id}")
