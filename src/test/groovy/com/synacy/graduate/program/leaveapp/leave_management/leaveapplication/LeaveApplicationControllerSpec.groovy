@@ -365,6 +365,39 @@ class LeaveApplicationControllerSpec extends Specification {
         status2 == response.content()[1].getStatus()
     }
 
+    def "createLeaveApplication should call LeaveApplicationService createLeaveApplication and return an EmployeeLeaveApplicationResponse with correct properties"() {
+        given:
+        Long leaveId = 1L
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer workDays = 1
+        String reason = "Reason for applying for a leave"
+        LeaveApplicationStatus status = LeaveApplicationStatus.PENDING
+
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+
+        LeaveApplication leaveApplication = Mock() {
+            getId() >> leaveId
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getWorkDays() >> workDays
+            getReason() >> reason
+            getStatus() >> status
+        }
+
+        when:
+        EmployeeLeaveApplicationResponse employeeLeaveApplicationResponse = leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        1 * leaveApplicationService.createLeaveApplication(leaveRequest) >> leaveApplication
+        leaveId == employeeLeaveApplicationResponse.getId()
+        startDate == employeeLeaveApplicationResponse.getStartDate()
+        endDate == employeeLeaveApplicationResponse.getEndDate()
+        workDays == employeeLeaveApplicationResponse.getWorkDays()
+        reason == employeeLeaveApplicationResponse.getReason()
+        status == employeeLeaveApplicationResponse.getStatus()
+    }
+
     def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if #outputDescription"() {
         given:
         String expectedErrorCode = "INVALID_LEAVE_DATES"
