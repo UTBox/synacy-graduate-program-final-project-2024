@@ -417,12 +417,11 @@ class LeaveApplicationControllerSpec extends Specification {
         expectedErrorMessage == exception.getErrorMessage()
 
         where:
-                 startDate           |         endDate         |                expectedErrorMessage                |   outputDescription
-                   null              |           null          |      "Start date or end date cannot be null."      | "startDate or endDate is null"
+                  startDate          |         endDate         |                expectedErrorMessage                |   outputDescription
+                    null             |           null          |      "Start date or end date cannot be null."      | "startDate or endDate is null"
         LocalDate.now().plusDays(2)  |      LocalDate.now()    |        "Start date cannot be after end date."      | "startDate is set after endDate"
-        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  | "Start or end date cannot be before current date." | "startDate is set before the current date"
-              LocalDate.now()        |  startDate.minusDays(1) | "Start or end date cannot be before current date." | "endDate is set before the current date"
-              LocalDate.now()        |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
+        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  |     "Start date cannot be before current date."    | "startDate is set before the current date"
+               LocalDate.now()       |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
     }
 
     def "createLeaveApplication should throw InvalidRequestException if employee does not exist"() {

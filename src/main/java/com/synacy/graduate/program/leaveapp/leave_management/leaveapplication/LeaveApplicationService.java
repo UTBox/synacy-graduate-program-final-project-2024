@@ -157,8 +157,8 @@ public class LeaveApplicationService {
         if (startDate.isAfter(endDate)) {
             throw new InvalidLeaveDateException("Start date cannot be after end date.");
         }
-        if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
-            throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new InvalidLeaveDateException("Start date cannot be before current date.");
         }
         if (leaveApplicationRepository.countOverlappingLeaveApplications(employeeId, startDate, endDate) > 0) {
             throw new InvalidLeaveDateException("Overlapping leave applications.");

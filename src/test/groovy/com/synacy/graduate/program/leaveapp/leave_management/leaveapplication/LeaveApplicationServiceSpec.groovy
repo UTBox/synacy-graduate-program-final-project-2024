@@ -4,6 +4,7 @@ import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
+import org.springframework.cglib.core.Local
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -35,6 +36,39 @@ class LeaveApplicationServiceSpec extends Specification {
 
         then:
         thrown(ResourceNotFoundException)
+    }
+
+    def "createLeaveApplication should throw InvalidLeaveDateException when #outputDescription"() {
+        given:
+        Long employeeId = 1L
+        Integer overlapLeaveCount = 1
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getEmployeeId() >> employeeId
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+        }
+
+        Employee employee = Mock() {
+            getId() >> employeeId
+        }
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.of(employee)
+        leaveApplicationRepository.countOverlappingLeaveApplications(employeeId, startDate, endDate) >> overlapLeaveCount
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        def exception = thrown(InvalidLeaveDateException)
+        expectedErrorMessage == exception.getMessage()
+
+        where:
+                 startDate           |         endDate         |                expectedErrorMessage                |   outputDescription
+                   null              |           null          |      "Start date or end date cannot be null."      | "startDate or endDate is null"
+        LocalDate.now().plusDays(2)  |      LocalDate.now()    |        "Start date cannot be after end date."      | "startDate is set after endDate"
+        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  |     "Start date cannot be before current date."    | "startDate is set before the current date"
+              LocalDate.now()        |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
     }
 
     def "getAllLeaveApplications should return a paginated list of all leave applications"() {
