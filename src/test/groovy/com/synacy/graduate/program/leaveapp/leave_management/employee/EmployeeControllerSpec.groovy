@@ -12,9 +12,10 @@ class EmployeeControllerSpec extends Specification {
     EmployeeController employeeController
     EmployeeService employeeService = Mock()
 
-    def setup(){
+    def setup() {
         employeeController = new EmployeeController(employeeService)
     }
+
     def "getEmployees should return a paged response of employees when max and page parameters are valid"() {
         given:
         int max = 2
@@ -90,7 +91,7 @@ class EmployeeControllerSpec extends Specification {
         employee.availableLeaves == result.availableLeaves
     }
 
-    def "getManagers should return the first 10 list of managers"(){
+    def "getManagers should return the first 10 list of managers"() {
         given:
         Long id1 = 1
         String firstName1 = "John"
@@ -126,7 +127,7 @@ class EmployeeControllerSpec extends Specification {
         lastName2 == managersResponse[1].getLastName()
     }
 
-    def "getManagers should return the first 10 list of managers with names containing the filter name"(){
+    def "getManagers should return the first 10 list of managers with names containing the filter name"() {
         given:
         String nameFilter = "John"
 
@@ -164,14 +165,14 @@ class EmployeeControllerSpec extends Specification {
         lastName2 == managersResponse[1].getLastName()
     }
 
-    def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"(){
+    def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"() {
         given:
         String errorCode = "HR_ADMIN_CREATION"
         String errorMessage = "Cannot create an HR Admin employee"
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new InvalidOperationException(errorCode, errorMessage)}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new InvalidOperationException(errorCode, errorMessage) }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -181,11 +182,11 @@ class EmployeeControllerSpec extends Specification {
         errorCode == e.errorCode
     }
 
-    def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"(){
+    def "createEmployee should throw an InvalidRequestException when the provided manager ID does not exist"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new ResourceNotFoundException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new ResourceNotFoundException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -194,11 +195,11 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID cannot be a manager to the created employee"(){
+    def "createEmployee should throw an InvalidRequestException when the given employee associated with the manager ID cannot be a manager to the created employee"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new NotManagerException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new NotManagerException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -207,11 +208,11 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should throw an InvalidRequestException when the employee to be created has an EMPLOYEE role but no manager is provided"(){
+    def "createEmployee should throw an InvalidRequestException when the employee to be created has an EMPLOYEE role but no manager is provided"() {
         given:
         CreateEmployeeRequest createEmployeeRequest = Mock()
 
-        employeeService.createEmployee(createEmployeeRequest) >> {throw new NoManagerException()}
+        employeeService.createEmployee(createEmployeeRequest) >> { throw new NoManagerException() }
 
         when:
         employeeController.createEmployee(createEmployeeRequest)
@@ -220,7 +221,7 @@ class EmployeeControllerSpec extends Specification {
         thrown(InvalidRequestException)
     }
 
-    def "createEmployee should create and save an employee based on the given details"(){
+    def "createEmployee should create and save an employee based on the given details"() {
         given:
         Long id = 2
         String firstName = "John"
@@ -233,7 +234,7 @@ class EmployeeControllerSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -272,7 +273,7 @@ class EmployeeControllerSpec extends Specification {
         managerLastName == response.getManager().getLastName()
     }
 
-    def "createEmployee should create and save an employee with no manager when provided with details without a manager"(){
+    def "createEmployee should create and save an employee with no manager when provided with details without a manager"() {
         given:
         Long id = 2
         String firstName = "John"
@@ -371,17 +372,11 @@ class EmployeeControllerSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "updateEmployee should throw InvalidOperationException if updatedTotalLeaves is less than availableLeaves"() {
+    def "updateEmployee should throw InvalidOperationException when EmployeeService updateEmployee throws LeaveCountModificationException"() {
         given:
         Long id = 1L
-        Integer updatedTotalLeaves = 15
-        Integer availableLeaves = 25
-
-        UpdateEmployeeRequest updateEmployeeRequest = Mock()
-        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
-
-        Employee employee = Mock()
-        employee.getAvailableLeaves() >> availableLeaves
+        UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
+        Employee employee = Mock(Employee)
 
         employeeService.getEmployeeById(id) >> Optional.of(employee)
         employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
