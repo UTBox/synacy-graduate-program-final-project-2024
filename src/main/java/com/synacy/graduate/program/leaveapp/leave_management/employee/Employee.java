@@ -62,4 +62,8 @@ public class Employee {
     public void addLeaveBalance(int days) {
         this.availableLeaves = this.availableLeaves + days;
     }
+
+    public String getName(){
+        return this.firstName + ' ' + this.lastName;
+    }
 }
