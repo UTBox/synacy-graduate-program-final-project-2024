@@ -16,8 +16,8 @@ public class ManagerialLeaveApplicationResponse {
 
     public ManagerialLeaveApplicationResponse(LeaveApplication leaveApplication) {
         this.id = leaveApplication.getId();
-        this.employeeName = leaveApplication.getEmployee().getFirstName() + " " + leaveApplication.getEmployee().getLastName();
-        this.managerName = leaveApplication.getManager().getFirstName() + " " + leaveApplication.getManager().getLastName();
+        this.employeeName = leaveApplication.getEmployee().getName();
+        this.managerName = leaveApplication.getManager().getName();
         this.startDate = leaveApplication.getStartDate();
         this.endDate = leaveApplication.getEndDate();
         this.workDays = leaveApplication.getWorkDays();
