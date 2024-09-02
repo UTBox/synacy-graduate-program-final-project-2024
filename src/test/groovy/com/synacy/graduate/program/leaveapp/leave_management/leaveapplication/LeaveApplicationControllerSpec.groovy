@@ -365,6 +365,39 @@ class LeaveApplicationControllerSpec extends Specification {
         status2 == response.content()[1].getStatus()
     }
 
+    def "createLeaveApplication should call LeaveApplicationService createLeaveApplication and return an EmployeeLeaveApplicationResponse with correct properties"() {
+        given:
+        Long leaveId = 1L
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer workDays = 1
+        String reason = "Reason for applying for a leave"
+        LeaveApplicationStatus status = LeaveApplicationStatus.PENDING
+
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+
+        LeaveApplication leaveApplication = Mock() {
+            getId() >> leaveId
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getWorkDays() >> workDays
+            getReason() >> reason
+            getStatus() >> status
+        }
+
+        when:
+        EmployeeLeaveApplicationResponse employeeLeaveApplicationResponse = leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        1 * leaveApplicationService.createLeaveApplication(leaveRequest) >> leaveApplication
+        leaveId == employeeLeaveApplicationResponse.getId()
+        startDate == employeeLeaveApplicationResponse.getStartDate()
+        endDate == employeeLeaveApplicationResponse.getEndDate()
+        workDays == employeeLeaveApplicationResponse.getWorkDays()
+        reason == employeeLeaveApplicationResponse.getReason()
+        status == employeeLeaveApplicationResponse.getStatus()
+    }
+
     def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if #outputDescription"() {
         given:
         String expectedErrorCode = "INVALID_LEAVE_DATES"
@@ -390,6 +423,22 @@ class LeaveApplicationControllerSpec extends Specification {
         LocalDate.now().minusDays(1) |  startDate.plusDays(1)  | "Start or end date cannot be before current date." | "startDate is set before the current date"
               LocalDate.now()        |  startDate.minusDays(1) | "Start or end date cannot be before current date." | "endDate is set before the current date"
               LocalDate.now()        |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
+    }
+
+    def "createLeaveApplication should throw InvalidRequestException if employee does not exist"() {
+        given:
+        Long id = 1L
+
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+        leaveRequest.getEmployeeId() >> id
+
+        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new ResourceNotFoundException() }
+
+        when:
+        leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        thrown(InvalidRequestException)
     }
 
     def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if employee does not have enough available leaves"() {
