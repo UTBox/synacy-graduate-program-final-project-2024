@@ -263,7 +263,7 @@ class LeaveApplicationControllerSpec extends Specification {
         status2 == response.content()[1].getStatus()
     }
 
-    def "createLeaveApplication should throw InvalidOperationException with appropriate errorCode if #outputDescription"() {
+    def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if #outputDescription"() {
         given:
         String expectedErrorCode = "INVALID_LEAVE_DATES"
         CreateLeaveApplicationRequest leaveRequest = Mock() {
@@ -271,21 +271,44 @@ class LeaveApplicationControllerSpec extends Specification {
             getEndDate() >> endDate
         }
 
-        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new InvalidLeaveDateException() }
+        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new InvalidLeaveDateException(expectedErrorMessage) }
 
         when:
         leaveApplicationController.createLeaveApplication(leaveRequest)
 
         then:
         def exception = thrown(InvalidOperationException)
-        expectedErrorCode == exception.errorCode
+        expectedErrorCode == exception.getErrorCode()
+        expectedErrorMessage == exception.getErrorMessage()
 
         where:
-                 startDate           |         endDate         |   outputDescription
-                   null              |           null          | "startDate or endDate is null"
-        LocalDate.now().plusDays(2)  |      LocalDate.now()    | "startDate is set after endDate"
-        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  | "startDate is set before the current date"
-               LocalDate.now()       |  startDate.minusDays(1) | "endDate is set before the current date"
-               LocalDate.now()       |  startDate.plusDays(1)  | "employee has an existing leave application that overlaps with current request"
+                 startDate           |         endDate         |                expectedErrorMessage                |   outputDescription
+                   null              |           null          |      "Start date or end date cannot be null."      | "startDate or endDate is null"
+        LocalDate.now().plusDays(2)  |      LocalDate.now()    |        "Start date cannot be after end date."      | "startDate is set after endDate"
+        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  | "Start or end date cannot be before current date." | "startDate is set before the current date"
+               LocalDate.now()       |  startDate.minusDays(1) | "Start or end date cannot be before current date." | "endDate is set before the current date"
+               LocalDate.now()       |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
+    }
+
+    def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if employee does not have enough available leaves"() {
+        given:
+        String expectedErrorCode = "INSUFFICIENT_LEAVE_CREDITS"
+        String expectedErrorMessage = "Employee has insufficient leave credits"
+        LocalDate startDate = LocalDate.now().plusDays(3)
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getStartDate() >> startDate
+            getStartDate() >> startDate.plusDays(5)
+        }
+
+        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new InvalidLeaveApplicationException(expectedErrorMessage) }
+
+        when:
+        leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        def exception = thrown(InvalidOperationException)
+        expectedErrorCode == exception.getErrorCode()
+        expectedErrorMessage == exception.getErrorMessage()
     }
 }
