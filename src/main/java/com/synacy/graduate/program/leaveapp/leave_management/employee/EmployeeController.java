@@ -30,13 +30,14 @@ public class EmployeeController {
 
         Page<Employee> employees = employeeService.getEmployees(max, page);
         long employeeCount = employees.getTotalElements();
+        int totalPages =  employees.getTotalPages();
         List<EmployeeResponse> employeeResponseList = employees
                 .getContent()
                 .stream()
                 .map(EmployeeResponse::new)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(employeeCount, page, employeeResponseList);
+        return new PageResponse<>(employeeCount, totalPages, page, employeeResponseList);
     }
 
     @GetMapping("/api/v1/employee/{id}")
