@@ -48,11 +48,11 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/manager")
-    public List<ManagerResponse> getManager(@RequestParam(required = false) String name){
+    public List<ManagerResponse> getManager(@RequestParam(required = false) String name) {
 
         List<Employee> managersList;
 
-        if(name != null) {
+        if (name != null) {
             managersList = employeeService.getManagersByName(name);
         } else {
             managersList = employeeService.getManagers();
@@ -80,14 +80,14 @@ public class EmployeeController {
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
-    public EmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+    public EmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @Valid @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
             Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
             return new EmployeeResponse(updatedEmployee);
-        } catch (InvalidUpdatedTotalLeavesException e) {
-            throw new InvalidOperationException("INVALID_TOTAL_LEAVES", "Cannot set total leave credits less than available leave credits.");
+        } catch (LeaveCountModificationException e) {
+            throw new InvalidOperationException("INVALID_LEAVE_MODIFICATION", e.getMessage());
         }
     }
 }
