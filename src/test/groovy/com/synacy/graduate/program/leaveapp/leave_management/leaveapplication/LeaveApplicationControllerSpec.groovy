@@ -392,6 +392,22 @@ class LeaveApplicationControllerSpec extends Specification {
               LocalDate.now()        |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
     }
 
+    def "createLeaveApplication should throw InvalidRequestException if employee does not exist"() {
+        given:
+        Long id = 1L
+
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+        leaveRequest.getEmployeeId() >> id
+
+        leaveApplicationService.createLeaveApplication(leaveRequest) >> { throw new ResourceNotFoundException() }
+
+        when:
+        leaveApplicationController.createLeaveApplication(leaveRequest)
+
+        then:
+        thrown(InvalidRequestException)
+    }
+
     def "createLeaveApplication should throw InvalidOperationException with expected errorCode and errorMessage if employee does not have enough available leaves"() {
         given:
         String expectedErrorCode = "INSUFFICIENT_LEAVE_CREDITS"
