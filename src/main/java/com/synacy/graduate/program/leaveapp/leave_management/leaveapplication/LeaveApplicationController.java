@@ -31,12 +31,13 @@ public class LeaveApplicationController {
     ) {
         Page<LeaveApplication> leaveApplications = leaveApplicationService.getAllLeaveApplications(max, page);
         long totalCount = leaveApplications.getTotalElements();
+        int totalPages = leaveApplications.getTotalPages();
         List<ManagerialLeaveApplicationResponse> leaveApplicationList = leaveApplications
                 .getContent()
                 .stream()
                 .map(ManagerialLeaveApplicationResponse::new)
                 .collect(Collectors.toList());
-        return new PageResponse<>(totalCount, page, leaveApplicationList);
+        return new PageResponse<>(totalCount, totalPages, page, leaveApplicationList);
     }
 
     @GetMapping("/api/v1/leave/manager/{id}")
@@ -50,13 +51,14 @@ public class LeaveApplicationController {
         try {
             Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByManager(max, page, managerId);
             long count = leaveApplications.getTotalElements();
+            int totalPages = leaveApplications.getTotalPages();
             List<ManagerialLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
                     .getContent()
                     .stream()
                     .map(ManagerialLeaveApplicationResponse::new)
                     .collect(Collectors.toList());
 
-            return new PageResponse<>(count, page, leaveApplicationResponseList);
+            return new PageResponse<>(count, totalPages, page, leaveApplicationResponseList);
         } catch (NotAManagerException e) {
             throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
         } catch (ResourceNotFoundException e) {
@@ -75,13 +77,14 @@ public class LeaveApplicationController {
         try {
             Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByEmployee(max, page, employeeId);
             long count = leaveApplications.getTotalElements();
+            int totalPages = leaveApplications.getTotalPages();
             List<EmployeeLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
                     .getContent()
                     .stream()
                     .map(EmployeeLeaveApplicationResponse::new)
                     .collect(Collectors.toList());
 
-            return new PageResponse<>(count, page, leaveApplicationResponseList);
+            return new PageResponse<>(count, totalPages, page, leaveApplicationResponseList);
         } catch (ResourceNotFoundException e) {
             throw new InvalidRequestException("No employee is associated with the ID");
         }
