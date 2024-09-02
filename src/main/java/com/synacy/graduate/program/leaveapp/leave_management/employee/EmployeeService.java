@@ -5,6 +5,7 @@ import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.Resour
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public class EmployeeService {
         return employeeRepository.findFirst10ManagersByName(name);
     }
 
+    @Transactional
     public Employee createEmployee(CreateEmployeeRequest createEmployeeRequest) {
 
         Employee employee = new Employee();
