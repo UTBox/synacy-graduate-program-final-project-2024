@@ -60,7 +60,7 @@ public class EmployeeService {
         return employeeRepository.save(employee);
     }
 
-    public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
+    Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
         if (isInvalidTotalLeaveCredits(selectedEmployee, updateEmployeeRequest.getTotalLeaveCredits())) {
             throw new InvalidUpdatedTotalLeavesException();
         }

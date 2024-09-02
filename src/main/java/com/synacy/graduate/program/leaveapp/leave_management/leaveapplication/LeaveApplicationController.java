@@ -1,7 +1,5 @@
 package com.synacy.graduate.program.leaveapp.leave_management.leaveapplication;
 
-import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee;
-import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.PageResponse;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidRequestException;
@@ -19,11 +17,9 @@ import java.util.stream.Collectors;
 public class LeaveApplicationController {
 
     private final LeaveApplicationService leaveApplicationService;
-    private final EmployeeService employeeService;
 
-    public LeaveApplicationController(LeaveApplicationService leaveApplicationService, EmployeeService employeeService) {
+    public LeaveApplicationController(LeaveApplicationService leaveApplicationService) {
         this.leaveApplicationService = leaveApplicationService;
-        this.employeeService = employeeService;
     }
 
     @GetMapping("api/v1/leave")
@@ -68,6 +64,29 @@ public class LeaveApplicationController {
         }
     }
 
+    @GetMapping("/api/v1/leave/employee/{id}")
+    public PageResponse<EmployeeLeaveApplicationResponse> getLeaveByEmployee(
+            @RequestParam(name = "max", defaultValue = "2")
+            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @RequestParam(name = "page", defaultValue = "1")
+            @Min(value = 1, message = "Page must be greater than 1") Integer page,
+            @PathVariable(name = "id") Long employeeId
+    ) {
+        try {
+            Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByEmployee(max, page, employeeId);
+            long count = leaveApplications.getTotalElements();
+            List<EmployeeLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
+                    .getContent()
+                    .stream()
+                    .map(EmployeeLeaveApplicationResponse::new)
+                    .collect(Collectors.toList());
+
+            return new PageResponse<>(count, page, leaveApplicationResponseList);
+        } catch (ResourceNotFoundException e) {
+            throw new InvalidRequestException("No employee is associated with the ID");
+        }
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("api/v1/leave")
     public EmployeeLeaveApplicationResponse createLeaveApplication(@RequestBody @Valid CreateLeaveApplicationRequest createLeaveApplicationRequest) {
@@ -94,8 +113,11 @@ public class LeaveApplicationController {
             LeaveApplication leaveApplication = leaveApplicationService.updateLeaveApplication(existingLeaveApplication, updateLeaveApplicationRequest);
             return new EmployeeLeaveApplicationResponse(leaveApplication);
 
-        } catch (InvalidLeaveApplicationStatusException e) {
+        } catch (StatusNotPendingException e) {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
+
+        } catch (InvalidLeaveApplicationException e) {
+            throw new InvalidOperationException("CANCELLATION_NOT_ALLOWED", e.getMessage());
         }
     }
 
@@ -105,7 +127,7 @@ public class LeaveApplicationController {
         LeaveApplication leave = leaveApplicationService.getLeaveApplicationById(id).orElseThrow(ResourceNotFoundException::new);
         try {
             leaveApplicationService.cancelLeaveApplication(leave);
-        } catch (InvalidLeaveApplicationStatusException e) {
+        } catch (StatusNotPendingException e) {
             throw new InvalidOperationException("LEAVE_STATUS_NOT_PENDING", e.getMessage());
         }
     }
