@@ -23,6 +23,20 @@ class LeaveApplicationServiceSpec extends Specification {
         leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService, leaveQuantityModifier)
     }
 
+    def "createLeaveApplication should throw ResourceNotFoundException if employee does not exist"() {
+        given:
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+        leaveRequest.getEmployeeId() >> 1L
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.empty()
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
     def "getAllLeaveApplications should return a paginated list of all leave applications"() {
         given:
         int max = 10;
