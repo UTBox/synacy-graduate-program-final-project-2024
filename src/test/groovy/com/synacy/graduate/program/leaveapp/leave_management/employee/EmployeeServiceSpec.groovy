@@ -15,7 +15,7 @@ class EmployeeServiceSpec extends Specification {
         employeeService = new EmployeeService(employeesList, employeeRepository)
     }
 
-    def "getEmployees should return a page of non-deleted employees given max and page number"() {
+    def "getPaginatedEmployees should return a page of non-deleted employees given max and page number"() {
         given:
         Employee employee = Mock(Employee) {
             id >> 1L
@@ -33,7 +33,7 @@ class EmployeeServiceSpec extends Specification {
         int page = 1
 
         when:
-        Page<Employee> result = employeeService.getEmployees(max, page)
+        Page<Employee> result = employeeService.getPaginatedEmployees(max, page)
 
         then:
         1 * employeeRepository.findAllByIsDeletedIsFalse(_) >> paginatedEmployees
@@ -64,7 +64,7 @@ class EmployeeServiceSpec extends Specification {
         employee == result.get()
     }
 
-    def "getManagers should return the first 10 list of managers"() {
+    def "getListManagers should return the first 10 list of managers"() {
         given:
         Long id1 = 1
         Long id2 = 2
@@ -78,14 +78,14 @@ class EmployeeServiceSpec extends Specification {
         List<Employee> managersList = [manager1, manager2]
 
         when:
-        List<Employee> managersResponse = employeeService.getManagers();
+        List<Employee> managersResponse = employeeService.getListManagers();
 
         then:
         1 * employeeRepository.findFirst10Managers() >> managersList
         managersList == managersResponse
     }
 
-    def "getManagersByName should return the first 10 list of managers with names that match the given filter"() {
+    def "getListManagersByName should return the first 10 list of managers with names that match the given filter"() {
         given:
         String nameFilter = "John"
 
@@ -101,7 +101,7 @@ class EmployeeServiceSpec extends Specification {
         List<Employee> managersList = [manager1, manager2]
 
         when:
-        List<Employee> managersResponse = employeeService.getManagersByName(nameFilter);
+        List<Employee> managersResponse = employeeService.getListManagersByName(nameFilter);
 
         then:
         1 * employeeRepository.findFirst10ManagersByName(nameFilter) >> managersList
