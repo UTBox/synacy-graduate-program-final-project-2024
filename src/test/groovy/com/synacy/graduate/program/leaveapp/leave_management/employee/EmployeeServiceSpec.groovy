@@ -11,7 +11,7 @@ class EmployeeServiceSpec extends Specification {
     List<Employee> employeesList = Mock();
     EmployeeRepository employeeRepository = Mock();
 
-    def setup(){
+    def setup() {
         employeeService = new EmployeeService(employeesList, employeeRepository)
     }
 
@@ -64,7 +64,7 @@ class EmployeeServiceSpec extends Specification {
         employee == result.get()
     }
 
-    def "getManagers should return the first 10 list of managers"(){
+    def "getManagers should return the first 10 list of managers"() {
         given:
         Long id1 = 1
         Long id2 = 2
@@ -85,7 +85,7 @@ class EmployeeServiceSpec extends Specification {
         managersList == managersResponse
     }
 
-    def "getManagersByName should return the first 10 list of managers with names that match the given filter"(){
+    def "getManagersByName should return the first 10 list of managers with names that match the given filter"() {
         given:
         String nameFilter = "John"
 
@@ -108,7 +108,7 @@ class EmployeeServiceSpec extends Specification {
         managersList == managersResponse
     }
 
-    def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"(){
+    def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -117,7 +117,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
 
@@ -128,7 +128,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(InvalidOperationException)
     }
 
-    def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"(){
+    def "createEmployee should throw a ResourceNotFoundException when the provided manager ID does not exist"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -138,7 +138,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> managerId
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -152,7 +152,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "createEmployee should throw a NotManagerException when assigning a manager with #managerRole role to an employee with #employeeRole role"(){
+    def "createEmployee should throw a NotManagerException when assigning a manager with #managerRole role to an employee with #employeeRole role"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -178,14 +178,14 @@ class EmployeeServiceSpec extends Specification {
         thrown(NotManagerException)
 
         where:
-        employeeRole           | managerRole
-        EmployeeRole.MANAGER   | EmployeeRole.EMPLOYEE
-        EmployeeRole.EMPLOYEE  | EmployeeRole.EMPLOYEE
-        EmployeeRole.EMPLOYEE  | EmployeeRole.HR_ADMIN
+        employeeRole          | managerRole
+        EmployeeRole.MANAGER  | EmployeeRole.EMPLOYEE
+        EmployeeRole.EMPLOYEE | EmployeeRole.EMPLOYEE
+        EmployeeRole.EMPLOYEE | EmployeeRole.HR_ADMIN
 
     }
 
-    def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"(){
+    def "createEmployee should throw a ManagerNullException when the employee with an EMPLOYEE role has no manager provided"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -194,7 +194,7 @@ class EmployeeServiceSpec extends Specification {
 
         CreateEmployeeRequest createEmployeeRequest = Mock()
         createEmployeeRequest.getFirstName() >> firstName
-        createEmployeeRequest.getLastName() >>lastName
+        createEmployeeRequest.getLastName() >> lastName
         createEmployeeRequest.getRole() >> role
         createEmployeeRequest.getManagerId() >> null
         createEmployeeRequest.getTotalLeaves() >> totalLeaves
@@ -206,7 +206,7 @@ class EmployeeServiceSpec extends Specification {
         thrown(NoManagerException)
     }
 
-    def "createEmployee should create and save an employee with #employeeRole role based on the given employee details and manager with role #managerRole"(){
+    def "createEmployee should create and save an employee with #employeeRole role based on the given employee details and manager with role #managerRole"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -230,7 +230,7 @@ class EmployeeServiceSpec extends Specification {
         employeeService.createEmployee(createEmployeeRequest)
 
         then:
-        1 * employeeRepository.save(_ as Employee) >> {Employee employee ->
+        1 * employeeRepository.save(_ as Employee) >> { Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
             assert employeeRole == employee.getRole()
@@ -241,14 +241,14 @@ class EmployeeServiceSpec extends Specification {
         }
 
         where:
-        employeeRole           | managerRole
-        EmployeeRole.MANAGER   | EmployeeRole.MANAGER
-        EmployeeRole.MANAGER   | EmployeeRole.HR_ADMIN
-        EmployeeRole.EMPLOYEE  | EmployeeRole.MANAGER
+        employeeRole          | managerRole
+        EmployeeRole.MANAGER  | EmployeeRole.MANAGER
+        EmployeeRole.MANAGER  | EmployeeRole.HR_ADMIN
+        EmployeeRole.EMPLOYEE | EmployeeRole.MANAGER
 
     }
 
-    def "createEmployee should create and save a MANAGER employee with a manager with HR_ADMIN role when given an empty manager ID"(){
+    def "createEmployee should create and save a MANAGER employee with a manager with HR_ADMIN role when given an empty manager ID"() {
         given:
         String firstName = "John"
         String lastName = "Dela Cruz"
@@ -272,7 +272,7 @@ class EmployeeServiceSpec extends Specification {
         employeeService.createEmployee(createEmployeeRequest)
 
         then:
-        1 * employeeRepository.save(_ as Employee) >> {Employee employee ->
+        1 * employeeRepository.save(_ as Employee) >> { Employee employee ->
             assert firstName == employee.getFirstName()
             assert lastName == employee.getLastName()
             assert EmployeeRole.MANAGER == employee.getRole()
@@ -287,12 +287,13 @@ class EmployeeServiceSpec extends Specification {
         given:
         Integer availableLeaves = 15
         Integer totalLeaves = 15
+
         Integer updatedTotalLeaves = 20
 
         Employee selectedEmployee = new Employee(availableLeaves: availableLeaves, totalLeaves: totalLeaves)
 
         UpdateEmployeeRequest updateEmployeeRequest = Mock()
-        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
+        updateEmployeeRequest.getTotalLeaves() >> updatedTotalLeaves
 
         when:
         Employee response = employeeService.updateEmployee(selectedEmployee, updateEmployeeRequest)
@@ -300,29 +301,32 @@ class EmployeeServiceSpec extends Specification {
         then:
         1 * employeeRepository.save(selectedEmployee) >> { Employee updatedEmployee ->
             assert updatedTotalLeaves == updatedEmployee.getTotalLeaves()
-            updatedEmployee
+            assert updatedTotalLeaves == updatedEmployee.getAvailableLeaves()
+            return updatedEmployee
         }
 
         updatedTotalLeaves == response.getTotalLeaves()
+        updatedTotalLeaves == response.getAvailableLeaves()
     }
 
-    def "updateEmployee should throw InvalidUpdatedTotalLeaves if updated value of totalLeaves is less than availableLeaves"() {
+    def "updateEmployee should throw a LeaveCountModificationException when the updated totalLeaves results the availableLeaves to less than 0"() {
         given:
-        Integer availableLeaves = 20
-        Integer updatedTotalLeaves = 15
+        int empTotalLeaves = 15
+        int updatedTotalLeaves = 9
+        int diffBetweenTotalAndUpdated = 6
 
-        Employee employee = Mock()
-        employee.getAvailableLeaves() >> availableLeaves
+        int empAvailableLeaves = 5
+        int updatedAvailableLeaves = -1
 
-        UpdateEmployeeRequest updateEmployeeRequest = Mock()
-        updateEmployeeRequest.getTotalLeaveCredits() >> updatedTotalLeaves
-
-        employeeService.isInvalidTotalLeaveCredits(employee, updateEmployeeRequest.getTotalLeaveCredits()) >> true
+        Employee selectedEmployee = new Employee(totalLeaves: empTotalLeaves, availableLeaves: empAvailableLeaves)
+        UpdateEmployeeRequest request = Mock() {
+            totalLeaves >> updatedTotalLeaves
+        }
 
         when:
-        employeeService.updateEmployee(employee, updateEmployeeRequest)
+        employeeService.updateEmployee(selectedEmployee, request)
 
         then:
-        thrown(InvalidUpdatedTotalLeavesException)
+        thrown(LeaveCountModificationException)
     }
 }

@@ -85,7 +85,7 @@ public class LeaveApplicationService {
     @Transactional
     LeaveApplication updateLeaveApplication(LeaveApplication leave, UpdateLeaveApplicationRequest request) {
         if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
-            throw new StatusNotPendingException("Leave application status is not PENDING.");
+            throw new StatusNotPendingException("Leave application status must be PENDING to update.");
         }
 
         switch (request.getStatus()) {
@@ -99,7 +99,7 @@ public class LeaveApplicationService {
                 break;
 
             case CANCELLED:
-                throw new InvalidLeaveApplicationException("Cancellation requests are not allowed in this method");
+                throw new InvalidLeaveApplicationException("Cancellation requests are not allowed in this method.");
         }
 
         return leaveApplicationRepository.save(leave);
