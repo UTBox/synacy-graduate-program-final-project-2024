@@ -29,7 +29,7 @@ public class LeaveApplicationController {
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
             @RequestParam(name = "manager", required = false) Long managerId,
-            @RequestParam(name = "status", required = false, defaultValue = "PENDING") LeaveApplicationStatus status
+            @RequestParam(name = "status") LeaveApplicationStatus status
     ){
         try{
             Page<LeaveApplication> leaveApplications;
