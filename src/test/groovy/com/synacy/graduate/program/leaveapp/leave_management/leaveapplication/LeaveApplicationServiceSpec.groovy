@@ -4,7 +4,6 @@ import com.synacy.graduate.program.leaveapp.leave_management.employee.Employee
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeRole
 import com.synacy.graduate.program.leaveapp.leave_management.employee.EmployeeService
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException
-import org.springframework.cglib.core.Local
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -22,6 +21,58 @@ class LeaveApplicationServiceSpec extends Specification {
 
     def setup() {
         leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService, leaveQuantityModifier)
+    }
+
+    def "createLeaveApplication should create a LeaveApplication and save it to the repository with the expected properties"() {
+        given:
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer leaveWorkDays = 1
+        String reason = "Reason for leave request"
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getEmployeeId() >> 1L
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getReason() >> reason
+        }
+
+        Employee manager = Mock()
+
+        Employee employee = Mock() {
+            getManager() >> manager
+        }
+
+        LeaveApplication leaveApplication = Mock() {
+            getEmployee() >> employee
+            getManager() >> manager
+            getStartDate() >> leaveRequest.getStartDate()
+            getEndDate() >> leaveRequest.getEndDate()
+            getWorkDays() >> leaveWorkDays
+            getReason() >> leaveRequest.getReason()
+            getStatus() >> LeaveApplicationStatus.PENDING
+        }
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.of(employee)
+
+        leaveApplicationRepository.countOverlappingLeaveApplications(
+                employee.getId(),
+                leaveRequest.getStartDate(),
+                leaveRequest.getEndDate()) >> 0
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        1 * leaveApplicationRepository.save(_ as LeaveApplication) >> { LeaveApplication actualApplication ->
+            assert leaveApplication.getEmployee() == actualApplication.getEmployee()
+            assert leaveApplication.getManager() == actualApplication.getManager()
+            assert leaveApplication.getStartDate() == actualApplication.getStartDate()
+            assert leaveApplication.getEndDate() == actualApplication.getEndDate()
+            assert leaveApplication.getWorkDays() == actualApplication.getWorkDays()
+            assert leaveApplication.getReason() == actualApplication.getReason()
+            assert leaveApplication.getStatus() == actualApplication.getStatus()
+        }
     }
 
     def "createLeaveApplication should throw ResourceNotFoundException if employee does not exist"() {

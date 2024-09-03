@@ -371,7 +371,7 @@ class LeaveApplicationControllerSpec extends Specification {
         LocalDate startDate = LocalDate.now()
         LocalDate endDate = startDate
         Integer workDays = 1
-        String reason = "Reason for applying for a leave"
+        String reason = "Reason for leave request"
         LeaveApplicationStatus status = LeaveApplicationStatus.PENDING
 
         CreateLeaveApplicationRequest leaveRequest = Mock()
