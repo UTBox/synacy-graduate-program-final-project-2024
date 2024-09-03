@@ -27,38 +27,26 @@ public class LeaveApplicationController {
             @RequestParam(name = "max", defaultValue = "2")
             @Min(value = 1, message = "Max must be greater than 1") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
-            @Min(value = 1, message = "Page must be greater than 1") Integer page
-    ){
-        Page<LeaveApplication> leaveApplications = leaveApplicationService.getPendingLeaveApplications(max, page);
-        long totalCount = leaveApplications.getTotalElements();
-        int totalPages = leaveApplications.getTotalPages();
-        List<ManagerialLeaveApplicationResponse> leaveApplicationList = leaveApplications
-                .getContent()
-                .stream()
-                .map(ManagerialLeaveApplicationResponse::new)
-                .collect(Collectors.toList());
-        return new PageResponse<>(totalCount, totalPages, page, leaveApplicationList);
-    }
-
-    @GetMapping("/api/v1/leave/manager/{id}")
-    public PageResponse<ManagerialLeaveApplicationResponse> getLeavesByManager(
-            @RequestParam(name = "max", defaultValue = "2")
-            @Min(value = 1, message = "Max must be greater than 1") Integer max,
-            @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
-            @PathVariable(name = "id") Long managerId
-    ) {
-        try {
-            Page<LeaveApplication> leaveApplications = leaveApplicationService.getLeavesByManager(max, page, managerId);
-            long count = leaveApplications.getTotalElements();
+            @RequestParam(name = "manager", required = false) Long managerId
+    ){
+        try{
+            Page<LeaveApplication> leaveApplications;
+
+            if(managerId != null) {
+                leaveApplications = leaveApplicationService.getPendingLeavesByManager(max, page, managerId);
+            } else {
+                leaveApplications = leaveApplicationService.getPendingLeaveApplications(max, page);
+            }
+
+            long totalCount = leaveApplications.getTotalElements();
             int totalPages = leaveApplications.getTotalPages();
-            List<ManagerialLeaveApplicationResponse> leaveApplicationResponseList = leaveApplications
+            List<ManagerialLeaveApplicationResponse> leaveApplicationList = leaveApplications
                     .getContent()
                     .stream()
                     .map(ManagerialLeaveApplicationResponse::new)
                     .collect(Collectors.toList());
-
-            return new PageResponse<>(count, totalPages, page, leaveApplicationResponseList);
+            return new PageResponse<>(totalCount, totalPages, page, leaveApplicationList);
         } catch (NotAManagerException e) {
             throw new InvalidOperationException("NOT_A_MANAGER", "The role of the employee associated with the ID is not a MANAGER");
         } catch (ResourceNotFoundException e) {

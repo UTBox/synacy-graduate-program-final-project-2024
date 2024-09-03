@@ -34,7 +34,7 @@ public class LeaveApplicationService {
         this.leaveQuantityModifier = leaveQuantityModifier;
     }
 
-    Page<LeaveApplication> getLeavesByManager(int max, int page, Long managerId) {
+    Page<LeaveApplication> getPendingLeavesByManager(int max, int page, Long managerId) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         Employee manager = employeeService.getEmployeeById(managerId)
                 .orElseThrow(ResourceNotFoundException::new);
@@ -43,7 +43,7 @@ public class LeaveApplicationService {
             throw new NotAManagerException();
         }
 
-        return leaveApplicationRepository.findAllByManager(manager, pageable);
+        return leaveApplicationRepository.findAllByManagerAndStatus(manager, LeaveApplicationStatus.PENDING, pageable);
     }
 
     Page<LeaveApplication> getLeavesByEmployee(int max, int page, Long employeeId) {
