@@ -41,7 +41,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/list/employee")
-    public List<EmployeeResponse> getListEmployees(@RequestParam(name = "name", required = false) String name) {
+    public List<EmployeeListResponse> getListEmployees(@RequestParam(name = "name", required = false) String name) {
         List<Employee> employeesList;
 
         if (name != null) {
@@ -51,7 +51,7 @@ public class EmployeeController {
         }
 
         return employeesList.stream()
-                .map(EmployeeResponse::new)
+                .map(EmployeeListResponse::new)
                 .collect(Collectors.toList());
     }
 
