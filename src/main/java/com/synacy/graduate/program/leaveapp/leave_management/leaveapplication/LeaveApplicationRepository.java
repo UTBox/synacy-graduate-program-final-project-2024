@@ -11,8 +11,8 @@ import java.time.LocalDate;
 
 @Repository
 public interface LeaveApplicationRepository extends JpaRepository<LeaveApplication, Long> {
-
-    Page<LeaveApplication> findAllByManager(Employee manager, Pageable pageable);
+    Page<LeaveApplication> findAllByStatus(LeaveApplicationStatus status, Pageable pageable);
+    Page<LeaveApplication> findAllByManagerAndStatus(Employee manager, LeaveApplicationStatus status, Pageable pageable);
     Page<LeaveApplication> findAllByEmployee(Employee employee, Pageable pageable);
 
     @Query(value = "SELECT COUNT(*) " +
