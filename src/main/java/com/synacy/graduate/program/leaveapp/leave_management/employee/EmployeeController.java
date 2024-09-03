@@ -22,15 +22,15 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/employee")
-    public PageResponse<EmployeeResponse> getEmployees(
+    public PageResponse<EmployeeResponse> getPaginatedEmployees(
             @RequestParam(name = "max", defaultValue = "2")
             @Min(value = 1, message = "Max must be greater than 1") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page) {
 
-        Page<Employee> employees = employeeService.getEmployees(max, page);
+        Page<Employee> employees = employeeService.getPaginatedEmployees(max, page);
         long employeeCount = employees.getTotalElements();
-        int totalPages =  employees.getTotalPages();
+        int totalPages = employees.getTotalPages();
         List<EmployeeResponse> employeeResponseList = employees
                 .getContent()
                 .stream()
@@ -40,27 +40,42 @@ public class EmployeeController {
         return new PageResponse<>(employeeCount, totalPages, page, employeeResponseList);
     }
 
-    @GetMapping("/api/v1/employee/{id}")
-    public EmployeeResponse getEmployee(@PathVariable(name = "id") Long id) {
-        Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+    @GetMapping("/api/v1/list/employee")
+    public List<EmployeeResponse> getListEmployees(@RequestParam(name = "name", required = false) String name) {
+        List<Employee> employeesList;
 
-        return new EmployeeResponse(employee);
+        if (name != null) {
+            employeesList = employeeService.getListEmployeesByName(name);
+        } else {
+            employeesList = employeeService.getListEmployees();
+        }
+
+        return employeesList.stream()
+                .map(EmployeeResponse::new)
+                .collect(Collectors.toList());
     }
 
-    @GetMapping("/api/v1/manager")
-    public List<ManagerResponse> getManager(@RequestParam(required = false) String name) {
+    @GetMapping("/api/v1/list/manager")
+    public List<ManagerResponse> getListManagers(@RequestParam(name = "name", required = false) String name) {
 
         List<Employee> managersList;
 
         if (name != null) {
-            managersList = employeeService.getManagersByName(name);
+            managersList = employeeService.getListManagersByName(name);
         } else {
-            managersList = employeeService.getManagers();
+            managersList = employeeService.getListManagers();
         }
 
         return managersList.stream()
                 .map(ManagerResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping("/api/v1/employee/{id}")
+    public EmployeeResponse getEmployee(@PathVariable(name = "id") Long id) {
+        Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+
+        return new EmployeeResponse(employee);
     }
 
     @ResponseStatus(HttpStatus.CREATED)

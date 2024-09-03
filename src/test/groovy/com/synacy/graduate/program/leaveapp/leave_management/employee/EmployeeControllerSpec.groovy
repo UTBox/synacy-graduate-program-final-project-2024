@@ -16,7 +16,7 @@ class EmployeeControllerSpec extends Specification {
         employeeController = new EmployeeController(employeeService)
     }
 
-    def "getEmployees should return a paged response of employees when max and page parameters are valid"() {
+    def "getPaginatedEmployees should return a paged response of employees when max and page parameters are valid"() {
         given:
         int max = 2
         int page = 1
@@ -37,10 +37,10 @@ class EmployeeControllerSpec extends Specification {
             totalElements >> totalCount
         }
 
-        employeeService.getEmployees(max, page) >> paginatedEmployees
+        employeeService.getPaginatedEmployees(max, page) >> paginatedEmployees
 
         when:
-        PageResponse<EmployeeResponse> result = employeeController.getEmployees(max, page)
+        PageResponse<EmployeeResponse> result = employeeController.getPaginatedEmployees(max, page)
 
         then:
         totalCount == result.totalCount()
@@ -91,7 +91,7 @@ class EmployeeControllerSpec extends Specification {
         employee.availableLeaves == result.availableLeaves
     }
 
-    def "getManagers should return the first 10 list of managers"() {
+    def "getListManagers should return the first 10 list of managers"() {
         given:
         Long id1 = 1
         String firstName1 = "John"
@@ -115,10 +115,10 @@ class EmployeeControllerSpec extends Specification {
         List<Employee> managersList = [manager1, manager2]
 
         when:
-        List<ManagerResponse> managersResponse = employeeController.getManager(null)
+        List<ManagerResponse> managersResponse = employeeController.getListManagers(null)
 
         then:
-        1 * employeeService.getManagers() >> managersList
+        1 * employeeService.getListManagers() >> managersList
         id1 == managersResponse[0].getId()
         firstName1 == managersResponse[0].getFirstName()
         lastName1 == managersResponse[0].getLastName()
@@ -127,7 +127,7 @@ class EmployeeControllerSpec extends Specification {
         lastName2 == managersResponse[1].getLastName()
     }
 
-    def "getManagers should return the first 10 list of managers with names containing the filter name"() {
+    def "getListManagers should return the first 10 list of managers with names containing the filter name"() {
         given:
         String nameFilter = "John"
 
@@ -153,10 +153,10 @@ class EmployeeControllerSpec extends Specification {
         List<Employee> managersList = [manager1, manager2]
 
         when:
-        List<ManagerResponse> managersResponse = employeeController.getManager(nameFilter)
+        List<ManagerResponse> managersResponse = employeeController.getListManagers(nameFilter)
 
         then:
-        1 * employeeService.getManagersByName(nameFilter) >> managersList
+        1 * employeeService.getListManagersByName(nameFilter) >> managersList
         id1 == managersResponse[0].getId()
         firstName1 == managersResponse[0].getFirstName()
         lastName1 == managersResponse[0].getLastName()

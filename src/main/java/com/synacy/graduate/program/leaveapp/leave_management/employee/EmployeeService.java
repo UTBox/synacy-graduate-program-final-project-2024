@@ -22,21 +22,29 @@ public class EmployeeService {
         createInitialEmployees();
     }
 
-    public Page<Employee> getEmployees(int max, int page) {
+    public Page<Employee> getPaginatedEmployees(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         return employeeRepository.findAllByIsDeletedIsFalse(pageable);
     }
 
-    public Optional<Employee> getEmployeeById(Long employeeId) {
-        return employeeRepository.findById(employeeId);
+    public List<Employee> getListEmployees() {
+        return employeeRepository.findFirst10Employees();
     }
 
-    public List<Employee> getManagers() {
+    public List<Employee> getListEmployeesByName(String name) {
+        return employeeRepository.findFirst10EmployeesByName(name);
+    }
+
+    public List<Employee> getListManagers() {
         return employeeRepository.findFirst10Managers();
     }
 
-    public List<Employee> getManagersByName(String name) {
+    public List<Employee> getListManagersByName(String name) {
         return employeeRepository.findFirst10ManagersByName(name);
+    }
+
+    public Optional<Employee> getEmployeeById(Long employeeId) {
+        return employeeRepository.findById(employeeId);
     }
 
     @Transactional
