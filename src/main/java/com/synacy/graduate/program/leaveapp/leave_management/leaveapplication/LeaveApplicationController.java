@@ -28,15 +28,16 @@ public class LeaveApplicationController {
             @Min(value = 1, message = "Max must be greater than 1") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page,
-            @RequestParam(name = "manager", required = false) Long managerId
+            @RequestParam(name = "manager", required = false) Long managerId,
+            @RequestParam(name = "status", required = false, defaultValue = "PENDING") LeaveApplicationStatus status
     ){
         try{
             Page<LeaveApplication> leaveApplications;
 
             if(managerId != null) {
-                leaveApplications = leaveApplicationService.getPendingLeavesByManager(max, page, managerId);
+                leaveApplications = leaveApplicationService.getLeavesByManagerAndStatus(max, page, managerId, status);
             } else {
-                leaveApplications = leaveApplicationService.getPendingLeaveApplications(max, page);
+                leaveApplications = leaveApplicationService.getLeaveApplicationsByStatus(max, page, status);
             }
 
             long totalCount = leaveApplications.getTotalElements();
