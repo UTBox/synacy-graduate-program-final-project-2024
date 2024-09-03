@@ -538,4 +538,37 @@ class LeaveApplicationServiceSpec extends Specification {
             assert LeaveApplicationStatus.CANCELLED == savedLeave.status
         }
     }
+
+    def "setLeaveApplication should return a LeaveApplication with the expected properties"() {
+        given:
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer leaveWorkDays = 1
+        String reason = "Reason for leave request"
+        LeaveApplicationStatus status = LeaveApplicationStatus.PENDING
+
+        Employee manager = Mock()
+
+        Employee employee = Mock() {
+            getManager() >> manager
+        }
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getReason() >> reason
+        }
+
+        when:
+        LeaveApplication actualApplication = LeaveApplicationService.setLeaveApplication(employee, leaveRequest, leaveWorkDays)
+
+        then:
+        employee == actualApplication.getEmployee()
+        manager == actualApplication.getManager()
+        startDate == actualApplication.getStartDate()
+        endDate == actualApplication.getEndDate()
+        leaveWorkDays == actualApplication.getWorkDays()
+        reason == actualApplication.getReason()
+        status == actualApplication.getStatus()
+    }
 }
