@@ -23,6 +23,105 @@ class LeaveApplicationServiceSpec extends Specification {
         leaveApplicationService = new LeaveApplicationService(leaveApplicationRepository, employeeService, leaveQuantityModifier)
     }
 
+    def "createLeaveApplication should create a LeaveApplication and save it to the repository with the expected properties"() {
+        given:
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer leaveWorkDays = 1
+        String reason = "Reason for leave request"
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getEmployeeId() >> 1L
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getReason() >> reason
+        }
+
+        Employee manager = Mock()
+
+        Employee employee = Mock() {
+            getManager() >> manager
+        }
+
+        LeaveApplication leaveApplication = Mock() {
+            getEmployee() >> employee
+            getManager() >> manager
+            getStartDate() >> leaveRequest.getStartDate()
+            getEndDate() >> leaveRequest.getEndDate()
+            getWorkDays() >> leaveWorkDays
+            getReason() >> leaveRequest.getReason()
+            getStatus() >> LeaveApplicationStatus.PENDING
+        }
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.of(employee)
+
+        leaveApplicationRepository.countOverlappingLeaveApplications(
+                employee.getId(),
+                leaveRequest.getStartDate(),
+                leaveRequest.getEndDate()) >> 0
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        1 * leaveApplicationRepository.save(_ as LeaveApplication) >> { LeaveApplication actualApplication ->
+            assert leaveApplication.getEmployee() == actualApplication.getEmployee()
+            assert leaveApplication.getManager() == actualApplication.getManager()
+            assert leaveApplication.getStartDate() == actualApplication.getStartDate()
+            assert leaveApplication.getEndDate() == actualApplication.getEndDate()
+            assert leaveApplication.getWorkDays() == actualApplication.getWorkDays()
+            assert leaveApplication.getReason() == actualApplication.getReason()
+            assert leaveApplication.getStatus() == actualApplication.getStatus()
+        }
+    }
+
+    def "createLeaveApplication should throw ResourceNotFoundException if employee does not exist"() {
+        given:
+        CreateLeaveApplicationRequest leaveRequest = Mock()
+        leaveRequest.getEmployeeId() >> 1L
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.empty()
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "createLeaveApplication should throw InvalidLeaveDateException when #outputDescription"() {
+        given:
+        Long employeeId = 1L
+        Integer overlapLeaveCount = 1
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getEmployeeId() >> employeeId
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+        }
+
+        Employee employee = Mock() {
+            getId() >> employeeId
+        }
+
+        employeeService.getEmployeeById(leaveRequest.getEmployeeId()) >> Optional.of(employee)
+        leaveApplicationRepository.countOverlappingLeaveApplications(employeeId, startDate, endDate) >> overlapLeaveCount
+
+        when:
+        leaveApplicationService.createLeaveApplication(leaveRequest)
+
+        then:
+        def exception = thrown(InvalidLeaveDateException)
+        expectedErrorMessage == exception.getMessage()
+
+        where:
+                 startDate           |         endDate         |                expectedErrorMessage                |   outputDescription
+                   null              |           null          |      "Start date or end date cannot be null."      | "startDate or endDate is null"
+        LocalDate.now().plusDays(2)  |      LocalDate.now()    |        "Start date cannot be after end date."      | "startDate is set after endDate"
+        LocalDate.now().minusDays(1) |  startDate.plusDays(1)  |     "Start date cannot be before current date."    | "startDate is set before the current date"
+              LocalDate.now()        |  startDate.plusDays(1)  |         "Overlapping leave applications."          | "employee has an existing leave application that overlaps with current request"
+    }
+
     def "getAllLeaveApplications should return a paginated list of all leave applications"() {
         given:
         int max = 10;
@@ -438,5 +537,38 @@ class LeaveApplicationServiceSpec extends Specification {
         1 * leaveApplicationRepository.save(leave) >> { LeaveApplication savedLeave ->
             assert LeaveApplicationStatus.CANCELLED == savedLeave.status
         }
+    }
+
+    def "setLeaveApplication should return a LeaveApplication with the expected properties"() {
+        given:
+        LocalDate startDate = LocalDate.now()
+        LocalDate endDate = startDate
+        Integer leaveWorkDays = 1
+        String reason = "Reason for leave request"
+        LeaveApplicationStatus status = LeaveApplicationStatus.PENDING
+
+        Employee manager = Mock()
+
+        Employee employee = Mock() {
+            getManager() >> manager
+        }
+
+        CreateLeaveApplicationRequest leaveRequest = Mock() {
+            getStartDate() >> startDate
+            getEndDate() >> endDate
+            getReason() >> reason
+        }
+
+        when:
+        LeaveApplication actualApplication = LeaveApplicationService.setLeaveApplication(employee, leaveRequest, leaveWorkDays)
+
+        then:
+        employee == actualApplication.getEmployee()
+        manager == actualApplication.getManager()
+        startDate == actualApplication.getStartDate()
+        endDate == actualApplication.getEndDate()
+        leaveWorkDays == actualApplication.getWorkDays()
+        reason == actualApplication.getReason()
+        status == actualApplication.getStatus()
     }
 }
