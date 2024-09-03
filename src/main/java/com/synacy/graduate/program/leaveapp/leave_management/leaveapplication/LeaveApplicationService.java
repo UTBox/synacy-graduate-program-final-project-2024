@@ -137,7 +137,7 @@ public class LeaveApplicationService {
 
         validateLeaveDates(employeeId, startDate, endDate);
 
-        Integer leaveWorkDays = 0;
+        int leaveWorkDays = 0;
         LocalDate currentDate = startDate;
 
         while (!currentDate.isAfter(endDate)) {
@@ -145,6 +145,10 @@ public class LeaveApplicationService {
                 leaveWorkDays++;
             }
             currentDate = currentDate.plusDays(1);
+        }
+
+        if (leaveWorkDays == 0) {
+            throw new InvalidLeaveDateException("Invalid leave dates set.");
         }
 
         return leaveWorkDays;
