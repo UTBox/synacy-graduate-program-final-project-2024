@@ -27,7 +27,8 @@ public class LeaveApplicationService {
     public LeaveApplicationService(
             LeaveApplicationRepository leaveApplicationRepository,
             EmployeeService employeeService,
-            LeaveQuantityModifier leaveQuantityModifier) {
+            LeaveQuantityModifier leaveQuantityModifier
+    ) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.employeeService = employeeService;
         this.leaveQuantityModifier = leaveQuantityModifier;
@@ -45,29 +46,80 @@ public class LeaveApplicationService {
         return leaveApplicationRepository.findAllByManager(manager, pageable);
     }
 
+    Page<LeaveApplication> getLeavesByEmployee(int max, int page, Long employeeId) {
+        Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
+        Employee employee = employeeService.getEmployeeById(employeeId)
+                .orElseThrow(ResourceNotFoundException::new);
+        return leaveApplicationRepository.findAllByEmployee(employee, pageable);
+    }
+
     Page<LeaveApplication> getPendingLeaveApplications(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         return leaveApplicationRepository.findAllByStatus(LeaveApplicationStatus.PENDING, pageable);
     }
 
+    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
+        return leaveApplicationRepository.findById(id);
+    }
+
     @Transactional
-    LeaveApplication createLeaveApplication(
-            Employee employee,
-            CreateLeaveApplicationRequest createLeaveApplicationRequest
-    ) throws InvalidLeaveDateException, InvalidLeaveApplicationException {
+    LeaveApplication createLeaveApplication(CreateLeaveApplicationRequest createLeaveApplicationRequest)
+            throws InvalidLeaveDateException, InvalidLeaveApplicationException {
+
+        Employee employee = employeeService
+                .getEmployeeById(createLeaveApplicationRequest.getEmployeeId())
+                .orElseThrow(ResourceNotFoundException::new);
+
         Integer leaveWorkDays = calculateLeaveWorkDays(
+                employee.getId(),
                 createLeaveApplicationRequest.getStartDate(),
                 createLeaveApplicationRequest.getEndDate()
         );
 
-        employeeService.subtractEmployeeAvailableLeaveCredits(employee, leaveWorkDays);
-
         LeaveApplication leaveApplication = setLeaveApplication(employee, createLeaveApplicationRequest, leaveWorkDays);
+        leaveQuantityModifier.deductLeaveQuantityBasedOnLeaveWorkDays(employee, leaveWorkDays);
 
         return leaveApplicationRepository.save(leaveApplication);
     }
 
-    private static LeaveApplication setLeaveApplication(Employee employee, CreateLeaveApplicationRequest createLeaveApplicationRequest, Integer leaveWorkDays) {
+    @Transactional
+    LeaveApplication updateLeaveApplication(LeaveApplication leave, UpdateLeaveApplicationRequest request) {
+        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
+            throw new StatusNotPendingException("Leave application status must be PENDING to update.");
+        }
+
+        switch (request.getStatus()) {
+            case REJECTED:
+                leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+                leave.setStatus(LeaveApplicationStatus.REJECTED);
+                break;
+
+            case APPROVED:
+                leave.setStatus(LeaveApplicationStatus.APPROVED);
+                break;
+
+            case CANCELLED:
+                throw new InvalidLeaveApplicationException("Cancellation requests are not allowed in this method.");
+        }
+
+        return leaveApplicationRepository.save(leave);
+    }
+
+    @Transactional
+    void cancelLeaveApplication(LeaveApplication leave) {
+        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
+            throw new StatusNotPendingException("Leave application status is not PENDING.");
+        }
+        leave.cancelLeave();
+        leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
+        leaveApplicationRepository.save(leave);
+    }
+
+    private static LeaveApplication setLeaveApplication(
+            Employee employee,
+            CreateLeaveApplicationRequest createLeaveApplicationRequest,
+            Integer leaveWorkDays) {
+
         LeaveApplication leaveApplication = new LeaveApplication();
         leaveApplication.setEmployee(employee);
         leaveApplication.setManager(employee.getManager());
@@ -76,13 +128,16 @@ public class LeaveApplicationService {
         leaveApplication.setWorkDays(leaveWorkDays);
         leaveApplication.setReason(createLeaveApplicationRequest.getReason());
         leaveApplication.setStatus(LeaveApplicationStatus.PENDING);
+
         return leaveApplication;
     }
 
-    private Integer calculateLeaveWorkDays(LocalDate startDate, LocalDate endDate) throws InvalidLeaveDateException {
-        validateLeaveDates(startDate, endDate);
+    private Integer calculateLeaveWorkDays(Long employeeId, LocalDate startDate, LocalDate endDate)
+            throws InvalidLeaveDateException {
 
-        Integer leaveWorkDays = 0;
+        validateLeaveDates(employeeId, startDate, endDate);
+
+        int leaveWorkDays = 0;
         LocalDate currentDate = startDate;
 
         while (!currentDate.isAfter(endDate)) {
@@ -92,44 +147,25 @@ public class LeaveApplicationService {
             currentDate = currentDate.plusDays(1);
         }
 
+        if (leaveWorkDays == 0) {
+            throw new InvalidLeaveDateException("Invalid leave dates set.");
+        }
+
         return leaveWorkDays;
     }
 
-    @Transactional
-    LeaveApplication updateLeaveApplication(LeaveApplication leave, UpdateLeaveApplicationRequest request) {
-        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
-            throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
-        }
-
-        if (request.getLeaveApplicationStatus() == LeaveApplicationStatus.REJECTED) {
-            leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
-        }
-
-        leave.setStatus(request.getLeaveApplicationStatus());
-        return leaveApplicationRepository.save(leave);
-    }
-
-    Optional<LeaveApplication> getLeaveApplicationById(Long id) {
-        return leaveApplicationRepository.findById(id);
-    }
-
-    private void validateLeaveDates(LocalDate startDate, LocalDate endDate) {
+    private void validateLeaveDates(Long employeeId, LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null) {
             throw new InvalidLeaveDateException("Start date or end date cannot be null.");
-        } else if (startDate.isAfter(endDate)) {
+        }
+        if (startDate.isAfter(endDate)) {
             throw new InvalidLeaveDateException("Start date cannot be after end date.");
-        } else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())) {
-            throw new InvalidLeaveDateException("Start or end date cannot be before current date.");
         }
-    }
-
-    @Transactional
-    void cancelLeaveApplication(LeaveApplication leave) {
-        if (leave.getStatus() != LeaveApplicationStatus.PENDING) {
-            throw new InvalidLeaveApplicationStatusException("Leave application status is not PENDING.");
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new InvalidLeaveDateException("Start date cannot be before current date.");
         }
-        leave.cancelLeave();
-        leaveQuantityModifier.addLeaveQuantityBasedOnRejectedOrCancelledRequest(leave);
-        leaveApplicationRepository.save(leave);
+        if (leaveApplicationRepository.countOverlappingLeaveApplications(employeeId, startDate, endDate) > 0) {
+            throw new InvalidLeaveDateException("Overlapping leave applications.");
+        }
     }
 }

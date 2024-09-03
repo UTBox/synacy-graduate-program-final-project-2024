@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Page<Employee> findAllByIsDeletedIsFalse(Pageable pageable);
+
     Optional<Employee> findByIdAndIsDeletedIsFalse(Long id);
 
     @Query("SELECT e " +
@@ -30,4 +31,20 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             "ORDER BY e.id " +
             "LIMIT 10")
     List<Employee> findFirst10Managers();
+
+    @Query("SELECT e " +
+            "FROM employee e " +
+            "WHERE e.isDeleted=false " +
+            "ORDER BY e.id " +
+            "LIMIT 10 ")
+    List<Employee> findFirst10Employees();
+
+    @Query("SELECT e " +
+            "FROM employee e " +
+            "WHERE CONCAT(e.firstName, ' ', e.lastName) " +
+            "ILIKE CONCAT('%',:name,'%') " +
+            "AND e.isDeleted=false " +
+            "ORDER BY e.id " +
+            "LIMIT 10 ")
+    List<Employee> findFirst10EmployeesByName(String name);
 }

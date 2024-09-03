@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 public class UpdateLeaveApplicationRequest {
     @NotNull(message = "Leave status is required")
-    private LeaveApplicationStatus leaveApplicationStatus;
+    private LeaveApplicationStatus status;
 }

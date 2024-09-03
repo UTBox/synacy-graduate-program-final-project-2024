@@ -1,11 +1,11 @@
 package com.synacy.graduate.program.leaveapp.leave_management.employee;
 
-import com.synacy.graduate.program.leaveapp.leave_management.leaveapplication.InvalidLeaveApplicationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.InvalidOperationException;
 import com.synacy.graduate.program.leaveapp.leave_management.web.apierror.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,31 +22,41 @@ public class EmployeeService {
         createInitialEmployees();
     }
 
-    public Page<Employee> getEmployees(int max, int page) {
+    public Page<Employee> getPaginatedEmployees(int max, int page) {
         Pageable pageable = PageRequest.of(page - 1, max, Sort.by("id"));
         return employeeRepository.findAllByIsDeletedIsFalse(pageable);
+    }
+
+    public List<Employee> getListEmployees() {
+        return employeeRepository.findFirst10Employees();
+    }
+
+    public List<Employee> getListEmployeesByName(String name) {
+        return employeeRepository.findFirst10EmployeesByName(name);
+    }
+
+    public List<Employee> getListManagers() {
+        return employeeRepository.findFirst10Managers();
+    }
+
+    public List<Employee> getListManagersByName(String name) {
+        return employeeRepository.findFirst10ManagersByName(name);
     }
 
     public Optional<Employee> getEmployeeById(Long employeeId) {
         return employeeRepository.findById(employeeId);
     }
 
-    public List<Employee> getManagers(){
-        return employeeRepository.findFirst10Managers();
-    }
-    public List<Employee> getManagersByName(String name) {
-        return employeeRepository.findFirst10ManagersByName(name);
-    }
-
+    @Transactional
     public Employee createEmployee(CreateEmployeeRequest createEmployeeRequest) {
 
         Employee employee = new Employee();
 
-        if(createEmployeeRequest.getRole() == EmployeeRole.HR_ADMIN){
+        if (createEmployeeRequest.getRole() == EmployeeRole.HR_ADMIN) {
             handleCreateHrAdmin();
-        } else if (createEmployeeRequest.getRole() == EmployeeRole.MANAGER){
+        } else if (createEmployeeRequest.getRole() == EmployeeRole.MANAGER) {
             handleCreateManager(employee, createEmployeeRequest);
-        } else if (createEmployeeRequest.getRole() == EmployeeRole.EMPLOYEE){
+        } else if (createEmployeeRequest.getRole() == EmployeeRole.EMPLOYEE) {
             handleCreateEmployee(employee, createEmployeeRequest);
         }
 
@@ -61,22 +71,20 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        if (isInvalidTotalLeaveCredits(selectedEmployee, updateEmployeeRequest.getTotalLeaveCredits())) {
-            throw new InvalidUpdatedTotalLeavesException();
+        int originalTotalLeaves = selectedEmployee.getTotalLeaves();
+        int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaves();
+        int diffBetweenOriginalAndUpdatedTotalLeaves = originalTotalLeaves - updatedTotalLeaves;
+
+        int currentAvailableLeaves = selectedEmployee.getAvailableLeaves();
+        int updatedAvailableLeaves = currentAvailableLeaves - diffBetweenOriginalAndUpdatedTotalLeaves;
+        if (updatedAvailableLeaves < 0) {
+            throw new LeaveCountModificationException("Insufficient available leaves: cannot reduce total leave credits");
         }
 
-        selectedEmployee.setTotalLeaves(updateEmployeeRequest.getTotalLeaveCredits());
+        selectedEmployee.setTotalLeaves(updatedTotalLeaves);
+        selectedEmployee.setAvailableLeaves(updatedAvailableLeaves);
 
         return employeeRepository.save(selectedEmployee);
-    }
-
-    public void subtractEmployeeAvailableLeaveCredits(Employee employee, Integer leaveWorkDays) {
-        if (employee.getAvailableLeaves() < leaveWorkDays) {
-            throw new InvalidLeaveApplicationException("Employee has insufficient leave credits");
-        } else {
-            employee.setAvailableLeaves(employee.getAvailableLeaves() - leaveWorkDays);
-            employeeRepository.save(employee);
-        }
     }
 
     private void createInitialEmployees() {
@@ -90,7 +98,7 @@ public class EmployeeService {
     private void handleCreateManager(Employee employee, CreateEmployeeRequest createEmployeeRequest) {
         Employee manager;
 
-        if(createEmployeeRequest.getManagerId() == null) {
+        if (createEmployeeRequest.getManagerId() == null) {
             manager = employeeRepository.findByIdAndIsDeletedIsFalse(1L).get();
         } else {
             manager = employeeRepository.findByIdAndIsDeletedIsFalse(createEmployeeRequest.getManagerId())
@@ -98,7 +106,7 @@ public class EmployeeService {
 
         }
 
-        if(manager.getRole() == EmployeeRole.EMPLOYEE ) {
+        if (manager.getRole() == EmployeeRole.EMPLOYEE) {
             throw new NotManagerException();
         }
 
@@ -106,21 +114,17 @@ public class EmployeeService {
     }
 
     private void handleCreateEmployee(Employee employee, CreateEmployeeRequest createEmployeeRequest) {
-        if(createEmployeeRequest.getManagerId() == null) {
+        if (createEmployeeRequest.getManagerId() == null) {
             throw new NoManagerException();
         }
 
         Employee manager = employeeRepository.findByIdAndIsDeletedIsFalse(createEmployeeRequest.getManagerId())
                 .orElseThrow(ResourceNotFoundException::new);
 
-        if(manager.getRole() == EmployeeRole.EMPLOYEE || manager.getRole() == EmployeeRole.HR_ADMIN) {
+        if (manager.getRole() == EmployeeRole.EMPLOYEE || manager.getRole() == EmployeeRole.HR_ADMIN) {
             throw new NotManagerException();
         }
 
         employee.setManager(manager);
-    }
-
-    private boolean isInvalidTotalLeaveCredits(Employee employee, Integer updatedTotalLeaves) {
-        return updatedTotalLeaves < employee.getAvailableLeaves();
     }
 }

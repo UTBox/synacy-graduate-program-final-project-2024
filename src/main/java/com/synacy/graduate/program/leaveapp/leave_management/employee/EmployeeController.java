@@ -22,21 +22,53 @@ public class EmployeeController {
     }
 
     @GetMapping("/api/v1/employee")
-    public PageResponse<EmployeeResponse> getEmployees(
+    public PageResponse<EmployeeResponse> getPaginatedEmployees(
             @RequestParam(name = "max", defaultValue = "2")
             @Min(value = 1, message = "Max must be greater than 1") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
             @Min(value = 1, message = "Page must be greater than 1") Integer page) {
 
-        Page<Employee> employees = employeeService.getEmployees(max, page);
+        Page<Employee> employees = employeeService.getPaginatedEmployees(max, page);
         long employeeCount = employees.getTotalElements();
+        int totalPages = employees.getTotalPages();
         List<EmployeeResponse> employeeResponseList = employees
                 .getContent()
                 .stream()
                 .map(EmployeeResponse::new)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(employeeCount, page, employeeResponseList);
+        return new PageResponse<>(employeeCount, totalPages, page, employeeResponseList);
+    }
+
+    @GetMapping("/api/v1/list/employee")
+    public List<EmployeeResponse> getListEmployees(@RequestParam(name = "name", required = false) String name) {
+        List<Employee> employeesList;
+
+        if (name != null) {
+            employeesList = employeeService.getListEmployeesByName(name);
+        } else {
+            employeesList = employeeService.getListEmployees();
+        }
+
+        return employeesList.stream()
+                .map(EmployeeResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/api/v1/list/manager")
+    public List<ManagerResponse> getListManagers(@RequestParam(name = "name", required = false) String name) {
+
+        List<Employee> managersList;
+
+        if (name != null) {
+            managersList = employeeService.getListManagersByName(name);
+        } else {
+            managersList = employeeService.getListManagers();
+        }
+
+        return managersList.stream()
+                .map(ManagerResponse::new)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/api/v1/employee/{id}")
@@ -44,22 +76,6 @@ public class EmployeeController {
         Employee employee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         return new EmployeeResponse(employee);
-    }
-
-    @GetMapping("/api/v1/manager")
-    public List<ManagerResponse> getManager(@RequestParam(required = false) String name){
-
-        List<Employee> managersList;
-
-        if(name != null) {
-            managersList = employeeService.getManagersByName(name);
-        } else {
-            managersList = employeeService.getManagers();
-        }
-
-        return managersList.stream()
-                .map(ManagerResponse::new)
-                .collect(Collectors.toList());
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -79,14 +95,14 @@ public class EmployeeController {
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
-    public EmployeeResponse updateEmployee(@PathVariable Long id, @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
+    public EmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @Valid @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
         Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
 
         try {
             Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
             return new EmployeeResponse(updatedEmployee);
-        } catch (InvalidUpdatedTotalLeavesException e) {
-            throw new InvalidOperationException("INVALID_TOTAL_LEAVES", "Cannot set total leave credits less than available leave credits.");
+        } catch (LeaveCountModificationException e) {
+            throw new InvalidOperationException("INVALID_LEAVE_MODIFICATION", e.getMessage());
         }
     }
 }
