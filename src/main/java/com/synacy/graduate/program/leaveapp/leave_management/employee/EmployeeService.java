@@ -71,6 +71,10 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
+        if(selectedEmployee.getRole() == EmployeeRole.HR_ADMIN) {
+            throw new EmployeeModificationNotAllowedException("Modification of HR Admin employees is not allowed");
+        }
+
         int originalTotalLeaves = selectedEmployee.getTotalLeaves();
         int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaves();
         int diffBetweenOriginalAndUpdatedTotalLeaves = originalTotalLeaves - updatedTotalLeaves;
