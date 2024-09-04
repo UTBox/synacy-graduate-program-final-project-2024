@@ -18,7 +18,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e " +
             "FROM employee e " +
             "WHERE CONCAT(e.firstName,' ',e.lastName) ILIKE CONCAT('%',:name,'%') " +
-            "AND e.role = 'MANAGER' " +
+            "AND e.role = 'MANAGER' OR e.role = 'HR_ADMIN' " +
             "AND e.isDeleted = false " +
             "ORDER BY e.id " +
             "LIMIT 10")
@@ -26,7 +26,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e " +
             "FROM employee e " +
-            "WHERE e.role = 'MANAGER' " +
+            "WHERE e.role = 'MANAGER' OR e.role = 'HR_ADMIN'" +
             "AND e.isDeleted = false " +
             "ORDER BY e.id " +
             "LIMIT 10")
