@@ -101,6 +101,8 @@ public class EmployeeController {
         try {
             Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
             return new EmployeeResponse(updatedEmployee);
+        } catch (EmployeeModificationNotAllowedException e) {
+            throw new InvalidOperationException("MODIFICATION_NOT_ALLOWED", e.getMessage());
         } catch (LeaveCountModificationException e) {
             throw new InvalidOperationException("INVALID_LEAVE_MODIFICATION", e.getMessage());
         }
