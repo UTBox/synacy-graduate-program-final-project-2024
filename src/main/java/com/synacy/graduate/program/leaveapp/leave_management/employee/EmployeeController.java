@@ -87,7 +87,7 @@ public class EmployeeController {
         } catch (ResourceNotFoundException e) {
             throw new InvalidRequestException("Provided manager does not exist.");
         } catch (NotManagerException e) {
-            throw new InvalidRequestException("Provided manager does not have a Manager role.");
+            throw new InvalidRequestException("Provided manager cannot manage the employee.");
         } catch (NoManagerException e) {
             throw new InvalidRequestException("No manager provided.");
         }
