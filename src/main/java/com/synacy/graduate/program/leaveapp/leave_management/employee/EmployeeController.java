@@ -24,9 +24,9 @@ public class EmployeeController {
     @GetMapping("/api/v1/employee")
     public PageResponse<EmployeeResponse> getPaginatedEmployees(
             @RequestParam(name = "max", defaultValue = "2")
-            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @Min(value = 1, message = "Max must be greater than 0") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
-            @Min(value = 1, message = "Page must be greater than 1") Integer page) {
+            @Min(value = 1, message = "Page must be greater than 0") Integer page) {
 
         Page<Employee> employees = employeeService.getPaginatedEmployees(max, page);
         long employeeCount = employees.getTotalElements();

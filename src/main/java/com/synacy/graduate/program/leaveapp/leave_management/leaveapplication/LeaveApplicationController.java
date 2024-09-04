@@ -25,9 +25,9 @@ public class LeaveApplicationController {
     @GetMapping("api/v1/leave")
     public PageResponse<ManagerialLeaveApplicationResponse> getLeaveApplications(
             @RequestParam(name = "max", defaultValue = "2")
-            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @Min(value = 1, message = "Max must be greater than 0") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
-            @Min(value = 1, message = "Page must be greater than 1") Integer page,
+            @Min(value = 1, message = "Page must be greater than 0") Integer page,
             @RequestParam(name = "manager", required = false) Long managerId,
             @RequestParam(name = "status") LeaveApplicationStatus status
     ){
@@ -58,9 +58,9 @@ public class LeaveApplicationController {
     @GetMapping("/api/v1/leave/employee/{id}")
     public PageResponse<EmployeeLeaveApplicationResponse> getLeaveByEmployee(
             @RequestParam(name = "max", defaultValue = "2")
-            @Min(value = 1, message = "Max must be greater than 1") Integer max,
+            @Min(value = 1, message = "Max must be greater than 0") Integer max,
             @RequestParam(name = "page", defaultValue = "1")
-            @Min(value = 1, message = "Page must be greater than 1") Integer page,
+            @Min(value = 1, message = "Page must be greater than 0") Integer page,
             @PathVariable(name = "id") Long employeeId
     ) {
         try {
