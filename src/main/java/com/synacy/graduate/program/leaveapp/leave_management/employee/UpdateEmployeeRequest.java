@@ -7,6 +7,6 @@ import lombok.Getter;
 @Getter
 public class UpdateEmployeeRequest {
     @NotNull(message = "Total leaves is required")
-    @Min(value = 0, message = "Must not be less than zero.")
+    @Min(value = 0, message = "Total leaves must not be less than zero.")
     private Integer totalLeaves;
 }
