@@ -16,7 +16,7 @@ class EmployeeControllerSpec extends Specification {
         employeeController = new EmployeeController(employeeService)
     }
 
-    def "getPaginatedEmployees should return a paged response of employees when max and page parameters are valid"() {
+    def "getPaginatedEmployees should return a paged response of employees when the max and page parameters are valid"() {
         given:
         int max = 2
         int page = 1
