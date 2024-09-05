@@ -96,10 +96,8 @@ public class EmployeeController {
     @ResponseStatus(HttpStatus.OK)
     @PutMapping("api/v1/employee/{id}")
     public EmployeeResponse updateEmployee(@PathVariable(name = "id") Long id, @Valid @RequestBody UpdateEmployeeRequest updateEmployeeRequest) {
-        Employee existingEmployee = employeeService.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
-
         try {
-            Employee updatedEmployee = employeeService.updateEmployee(existingEmployee, updateEmployeeRequest);
+            Employee updatedEmployee = employeeService.updateEmployee(id, updateEmployeeRequest);
             return new EmployeeResponse(updatedEmployee);
         } catch (EmployeeModificationNotAllowedException e) {
             throw new InvalidOperationException("MODIFICATION_NOT_ALLOWED", e.getMessage());
