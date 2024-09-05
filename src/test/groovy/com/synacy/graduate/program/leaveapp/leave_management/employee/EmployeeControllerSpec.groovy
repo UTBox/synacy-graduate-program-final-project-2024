@@ -53,42 +53,98 @@ class EmployeeControllerSpec extends Specification {
         employeesList[0].availableLeaves == result.content()[0].availableLeaves
     }
 
-    def "getEmployee should throw a ResourceNotFoundException when employee of given id does not exist"() {
+    def "getListEmployees should return a list of the first 10 employees"() {
         given:
-        Long id = 1
-        employeeService.getEmployeeById(id) >> Optional.empty()
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+        String name1 = "John Doe"
+        EmployeeRole role1 = EmployeeRole.MANAGER
+
+        Long id2 = 2
+        String firstName2 = "Johns"
+        String lastName2 = "Does"
+        String name2 = "Johns Does"
+        EmployeeRole role2 = EmployeeRole.EMPLOYEE
+
+        Employee employee1 = Mock(Employee) {
+            id >> id1
+            firstName >> firstName1
+            lastName >> lastName1
+            role >> role1
+        }
+        employee1.getName() >> name1
+
+        Employee employee2 = Mock(Employee) {
+            id >> id2
+            firstName >> firstName2
+            lastName >> lastName2
+            role >> role2
+        }
+        employee2.getName() >> name2
+
+        List<Employee> employeeList = [employee1, employee2]
+        employeeService.getListEmployees() >> employeeList
 
         when:
-        employeeController.getEmployee(id)
+        List<EmployeeListResponse> response = employeeController.getListEmployees(null)
 
         then:
-        thrown(ResourceNotFoundException)
+        id1 == response[0].getId()
+        name1 == response[0].getName()
+        role1 == response[0].getRole()
+
+        id2 == response[1].getId()
+        name2 == response[1].getName()
+        role2 == response[1].getRole()
     }
 
-    def "getEmployee should return an employee when employee of given id exists"() {
+    def "getListEmployees should return a list if the first 10 employees with names that matches the given name"() {
         given:
-        Long employeeId = 1
-        Employee employee = Mock(Employee) {
-            id >> employeeId
-            firstName >> "John"
-            lastName >> "Wick"
-            role >> EmployeeRole.EMPLOYEE
-            totalLeaves >> 15
-            availableLeaves >> 15
-        }
+        String nameFilter = "John"
 
-        employeeService.getEmployeeById(employeeId) >> Optional.of(employee)
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+        String name1 = "John Doe"
+        EmployeeRole role1 = EmployeeRole.MANAGER
+
+        Long id2 = 2
+        String firstName2 = "Johns"
+        String lastName2 = "Does"
+        String name2 = "Johns Does"
+        EmployeeRole role2 = EmployeeRole.EMPLOYEE
+
+        Employee employee1 = Mock(Employee) {
+            id >> id1
+            firstName >> firstName1
+            lastName >> lastName1
+            role >> role1
+        }
+        employee1.getName() >> name1
+
+        Employee employee2 = Mock(Employee) {
+            id >> id2
+            firstName >> firstName2
+            lastName >> lastName2
+            role >> role2
+        }
+        employee2.getName() >> name2
+
+        List<Employee> employeeList = [employee1, employee2]
+        employeeService.getListEmployeesByName(nameFilter) >> employeeList
 
         when:
-        EmployeeResponse result = employeeController.getEmployee(employeeId)
+        List<EmployeeListResponse> response = employeeController.getListEmployees(nameFilter)
 
         then:
-        employee.id == result.id
-        employee.firstName == result.firstName
-        employee.lastName == result.lastName
-        employee.role == result.role
-        employee.totalLeaves == result.totalLeaves
-        employee.availableLeaves == result.availableLeaves
+        id1 == response[0].getId()
+        name1 == response[0].getName()
+        role1 == response[0].getRole()
+
+        id2 == response[1].getId()
+        name2 == response[1].getName()
+        role2 == response[1].getRole()
     }
 
     def "getListManagers should return the first 10 list of managers"() {
@@ -163,6 +219,44 @@ class EmployeeControllerSpec extends Specification {
         id2 == managersResponse[1].getId()
         firstName2 == managersResponse[1].getFirstName()
         lastName2 == managersResponse[1].getLastName()
+    }
+
+    def "getEmployee should throw a ResourceNotFoundException when employee of given id does not exist"() {
+        given:
+        Long id = 1
+        employeeService.getEmployeeById(id) >> Optional.empty()
+
+        when:
+        employeeController.getEmployee(id)
+
+        then:
+        thrown(ResourceNotFoundException)
+    }
+
+    def "getEmployee should return an employee when employee of given id exists"() {
+        given:
+        Long employeeId = 1
+        Employee employee = Mock(Employee) {
+            id >> employeeId
+            firstName >> "John"
+            lastName >> "Wick"
+            role >> EmployeeRole.EMPLOYEE
+            totalLeaves >> 15
+            availableLeaves >> 15
+        }
+
+        employeeService.getEmployeeById(employeeId) >> Optional.of(employee)
+
+        when:
+        EmployeeResponse result = employeeController.getEmployee(employeeId)
+
+        then:
+        employee.id == result.id
+        employee.firstName == result.firstName
+        employee.lastName == result.lastName
+        employee.role == result.role
+        employee.totalLeaves == result.totalLeaves
+        employee.availableLeaves == result.availableLeaves
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an employee with an HR_ADMIN role"() {
@@ -318,6 +412,7 @@ class EmployeeControllerSpec extends Specification {
         given:
         Long id = 1
         Integer updatedTotalLeaves = 20
+        Integer updatedAvailableLeaves = 17
         String firstName = "John"
         String lastName = "Doe"
         EmployeeRole role = EmployeeRole.EMPLOYEE
@@ -331,8 +426,7 @@ class EmployeeControllerSpec extends Specification {
         Employee employee = Mock()
         employee.getId() >> id
         employee.getTotalLeaves() >> totalLeaves
-
-        employeeService.getEmployeeById(id) >> Optional.of(employee)
+        employee.getAvailableLeaves() >> availableLeaves
 
         Employee updatedEmployee = Mock() {
             getId() >> id
@@ -340,7 +434,7 @@ class EmployeeControllerSpec extends Specification {
             getLastName() >> lastName
             getRole() >> role
             getTotalLeaves() >> updatedTotalLeaves
-            getAvailableLeaves() >> availableLeaves
+            getAvailableLeaves() >> updatedAvailableLeaves
             getManager() >> manager
             getIsDeleted() >> isDeleted
         }
@@ -349,13 +443,13 @@ class EmployeeControllerSpec extends Specification {
         EmployeeResponse employeeResponse = employeeController.updateEmployee(id, updateEmployeeRequest)
 
         then:
-        1 * employeeService.updateEmployee(employee, updateEmployeeRequest) >> updatedEmployee
+        1 * employeeService.updateEmployee(id, updateEmployeeRequest) >> updatedEmployee
         id == employeeResponse.getId()
         firstName == employeeResponse.getFirstName()
         lastName == employeeResponse.getLastName()
         role == employeeResponse.getRole()
         updatedTotalLeaves == employeeResponse.getTotalLeaves()
-        availableLeaves == employeeResponse.getAvailableLeaves()
+        updatedAvailableLeaves == employeeResponse.getAvailableLeaves()
     }
 
     def "updateEmployee should throw ResourceNotFoundException if employee id is not found"() {
@@ -363,7 +457,7 @@ class EmployeeControllerSpec extends Specification {
         Long id = 5L
         UpdateEmployeeRequest updateEmployeeRequest = Mock()
 
-        employeeService.getEmployeeById(id) >> Optional.empty()
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new ResourceNotFoundException() }
 
         when:
         employeeController.updateEmployee(id, updateEmployeeRequest)
@@ -372,19 +466,36 @@ class EmployeeControllerSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "updateEmployee should throw InvalidOperationException when EmployeeService updateEmployee throws LeaveCountModificationException"() {
+    def "updateEmployee should throw an InvalidOperationException when EmployeeService updateEmployee throws EmployeeModificationNotAllowedException"() {
         given:
         Long id = 1L
         UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
-        Employee employee = Mock(Employee)
+        String errorCode = "MODIFICATION_NOT_ALLOWED"
 
-        employeeService.getEmployeeById(id) >> Optional.of(employee)
-        employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new EmployeeModificationNotAllowedException() }
 
         when:
         employeeController.updateEmployee(id, updateEmployeeRequest)
 
         then:
-        thrown(InvalidOperationException)
+        def e = thrown(InvalidOperationException)
+        errorCode == e.getErrorCode()
+    }
+
+    def "updateEmployee should throw InvalidOperationException when EmployeeService updateEmployee throws LeaveCountModificationException"() {
+        given:
+        Long id = 1L
+        UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
+        String errorCode = "INVALID_LEAVE_MODIFICATION"
+
+
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
+
+        when:
+        employeeController.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        def e = thrown(InvalidOperationException)
+        errorCode == e.getErrorCode()
     }
 }

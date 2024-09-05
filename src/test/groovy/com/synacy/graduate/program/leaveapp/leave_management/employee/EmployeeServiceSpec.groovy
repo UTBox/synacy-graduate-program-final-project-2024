@@ -45,6 +45,86 @@ class EmployeeServiceSpec extends Specification {
         employeesList[0].availableLeaves == result.content[0].availableLeaves
     }
 
+    def "getListEmployees should return the first 10 list of employees"(){
+        given:
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+        String name1 = "John Doe"
+        EmployeeRole role1 = EmployeeRole.MANAGER
+
+        Long id2 = 2
+        String firstName2 = "Johns"
+        String lastName2 = "Does"
+        String name2 = "Johns Does"
+        EmployeeRole role2 = EmployeeRole.EMPLOYEE
+
+        Employee employee1 = Mock(Employee) {
+            id >> id1
+            firstName >> firstName1
+            lastName >> lastName1
+            role >> role1
+        }
+
+        Employee employee2 = Mock(Employee) {
+            id >> id2
+            firstName >> firstName2
+            lastName >> lastName2
+            role >> role2
+        }
+
+        List<Employee> employeeList = [employee1, employee2]
+
+        when:
+        List<Employee> response =  employeeService.getListEmployees()
+
+        then:
+        1 * employeeRepository.findFirst10Employees() >> employeeList
+        employeeList == response
+
+    }
+
+    def "getListEmployeesByName should return the first 10 list of employees with names that matches the given name"(){
+        given:
+        String nameFilter = "John"
+
+        Long id1 = 1
+        String firstName1 = "John"
+        String lastName1 = "Doe"
+        String name1 = "John Doe"
+        EmployeeRole role1 = EmployeeRole.MANAGER
+
+        Long id2 = 2
+        String firstName2 = "Johns"
+        String lastName2 = "Does"
+        String name2 = "Johns Does"
+        EmployeeRole role2 = EmployeeRole.EMPLOYEE
+
+        Employee employee1 = Mock(Employee) {
+            id >> id1
+            firstName >> firstName1
+            lastName >> lastName1
+            role >> role1
+        }
+
+        Employee employee2 = Mock(Employee) {
+            id >> id2
+            firstName >> firstName2
+            lastName >> lastName2
+            role >> role2
+        }
+
+        List<Employee> employeeList = [employee1, employee2]
+
+        when:
+        List<Employee> response =  employeeService.getListEmployeesByName(nameFilter)
+
+        then:
+        1 * employeeRepository.findFirst10EmployeesByName(nameFilter) >> employeeList
+        employeeList == response
+
+    }
+
     def "getEmployeeById should return an employee with the given id"() {
         given:
         Long id = 1
@@ -60,7 +140,7 @@ class EmployeeServiceSpec extends Specification {
         Optional<Employee> result = employeeService.getEmployeeById(id)
 
         then:
-        1 * employeeRepository.findById(id) >> Optional.of(employee)
+        1 * employeeRepository.findByIdAndIsDeletedIsFalse(id) >> Optional.of(employee)
         employee == result.get()
     }
 
@@ -106,6 +186,22 @@ class EmployeeServiceSpec extends Specification {
         then:
         1 * employeeRepository.findFirst10ManagersByName(nameFilter) >> managersList
         managersList == managersResponse
+    }
+
+    def "getEmployeeById should return the employee that matches the given ID"(){
+        given:
+        Long givenId = 1
+
+        Employee employee = Mock(Employee) {
+            id >> givenId
+        }
+
+        when:
+        Optional<Employee> response = employeeService.getEmployeeById(givenId)
+
+        then:
+        1 * employeeRepository.findByIdAndIsDeletedIsFalse(givenId) >> Optional.of(employee)
+        Optional.of(employee) == response
     }
 
     def "createEmployee should throw an InvalidOperationException when creating an HR Admin employee"() {
@@ -285,18 +381,20 @@ class EmployeeServiceSpec extends Specification {
 
     def "updateEmployee should update employee's totalLeaves, save it in the employeeRepository, and return an Employee with the updated property"() {
         given:
+        Long id = 1
         Integer availableLeaves = 15
         Integer totalLeaves = 15
 
         Integer updatedTotalLeaves = 20
 
         Employee selectedEmployee = new Employee(availableLeaves: availableLeaves, totalLeaves: totalLeaves)
+        employeeRepository.findByIdAndIsDeletedIsFalse(id) >> Optional.of(selectedEmployee)
 
         UpdateEmployeeRequest updateEmployeeRequest = Mock()
         updateEmployeeRequest.getTotalLeaves() >> updatedTotalLeaves
 
         when:
-        Employee response = employeeService.updateEmployee(selectedEmployee, updateEmployeeRequest)
+        Employee response = employeeService.updateEmployee(id, updateEmployeeRequest)
 
         then:
         1 * employeeRepository.save(selectedEmployee) >> { Employee updatedEmployee ->
@@ -311,22 +409,56 @@ class EmployeeServiceSpec extends Specification {
 
     def "updateEmployee should throw a LeaveCountModificationException when the updated totalLeaves results the availableLeaves to less than 0"() {
         given:
+        Long id = 1
         int empTotalLeaves = 15
         int updatedTotalLeaves = 9
-        int diffBetweenTotalAndUpdated = 6
 
         int empAvailableLeaves = 5
-        int updatedAvailableLeaves = -1
 
         Employee selectedEmployee = new Employee(totalLeaves: empTotalLeaves, availableLeaves: empAvailableLeaves)
+        employeeRepository.findByIdAndIsDeletedIsFalse(id) >> Optional.of(selectedEmployee)
+
         UpdateEmployeeRequest request = Mock() {
             totalLeaves >> updatedTotalLeaves
         }
 
         when:
-        employeeService.updateEmployee(selectedEmployee, request)
+        employeeService.updateEmployee(id, request)
 
         then:
         thrown(LeaveCountModificationException)
+    }
+
+    def "updateEmployee should throw a EmployeeModificationNotAllowedException when the employee to be updated has an HR_ADMIN role"(){
+        given:
+        Long employeeId = 1
+
+        Employee selectedEmployee = Mock(Employee){
+            id >> employeeId
+            role >> EmployeeRole.HR_ADMIN
+        }
+
+        employeeRepository.findByIdAndIsDeletedIsFalse(employeeId) >> Optional.of(selectedEmployee)
+
+        UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
+
+        when:
+        employeeService.updateEmployee(employeeId, updateEmployeeRequest)
+
+        then:
+        thrown(EmployeeModificationNotAllowedException)
+    }
+
+    def "updateEmployee should throw a ResourceNotFoundException when no employee is associated with the given ID"(){
+        given:
+        Long id = 1
+        UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
+        employeeRepository.findByIdAndIsDeletedIsFalse(id) >> Optional.empty()
+
+        when:
+        employeeService.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        thrown(ResourceNotFoundException)
     }
 }
