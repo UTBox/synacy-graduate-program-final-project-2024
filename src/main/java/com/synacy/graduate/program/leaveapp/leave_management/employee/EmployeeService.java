@@ -44,7 +44,7 @@ public class EmployeeService {
     }
 
     public Optional<Employee> getEmployeeById(Long employeeId) {
-        return employeeRepository.findById(employeeId);
+        return employeeRepository.findByIdAndIsDeletedIsFalse(employeeId);
     }
 
     @Transactional
@@ -70,25 +70,28 @@ public class EmployeeService {
         return employeeRepository.save(employee);
     }
 
-    public Employee updateEmployee(Employee selectedEmployee, UpdateEmployeeRequest updateEmployeeRequest) {
-        if(selectedEmployee.getRole() == EmployeeRole.HR_ADMIN) {
+    public Employee updateEmployee(Long id, UpdateEmployeeRequest updateEmployeeRequest) {
+
+        Employee employee = this.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
+
+        if(employee.getRole() == EmployeeRole.HR_ADMIN) {
             throw new EmployeeModificationNotAllowedException("Modification of HR Admin employees is not allowed");
         }
 
-        int originalTotalLeaves = selectedEmployee.getTotalLeaves();
+        int originalTotalLeaves = employee.getTotalLeaves();
         int updatedTotalLeaves = updateEmployeeRequest.getTotalLeaves();
         int diffBetweenOriginalAndUpdatedTotalLeaves = originalTotalLeaves - updatedTotalLeaves;
 
-        int currentAvailableLeaves = selectedEmployee.getAvailableLeaves();
+        int currentAvailableLeaves = employee.getAvailableLeaves();
         int updatedAvailableLeaves = currentAvailableLeaves - diffBetweenOriginalAndUpdatedTotalLeaves;
         if (updatedAvailableLeaves < 0) {
             throw new LeaveCountModificationException("Insufficient available leaves: cannot reduce total leave credits");
         }
 
-        selectedEmployee.setTotalLeaves(updatedTotalLeaves);
-        selectedEmployee.setAvailableLeaves(updatedAvailableLeaves);
+        employee.setTotalLeaves(updatedTotalLeaves);
+        employee.setAvailableLeaves(updatedAvailableLeaves);
 
-        return employeeRepository.save(selectedEmployee);
+        return employeeRepository.save(employee);
     }
 
     private void createInitialEmployees() {
