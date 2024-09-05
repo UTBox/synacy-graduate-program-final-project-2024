@@ -53,7 +53,7 @@ class EmployeeControllerSpec extends Specification {
         employeesList[0].availableLeaves == result.content()[0].availableLeaves
     }
 
-    def "getListEmployees should return a list of the first 10 employees"(){
+    def "getListEmployees should return a list of the first 10 employees"() {
         given:
         Long id1 = 1
         String firstName1 = "John"
@@ -99,7 +99,7 @@ class EmployeeControllerSpec extends Specification {
         role2 == response[1].getRole()
     }
 
-    def "getListEmployees should return a list if the first 10 employees with names that matches the given name"(){
+    def "getListEmployees should return a list if the first 10 employees with names that matches the given name"() {
         given:
         String nameFilter = "John"
 
@@ -412,6 +412,7 @@ class EmployeeControllerSpec extends Specification {
         given:
         Long id = 1
         Integer updatedTotalLeaves = 20
+        Integer updatedAvailableLeaves = 17
         String firstName = "John"
         String lastName = "Doe"
         EmployeeRole role = EmployeeRole.EMPLOYEE
@@ -425,8 +426,7 @@ class EmployeeControllerSpec extends Specification {
         Employee employee = Mock()
         employee.getId() >> id
         employee.getTotalLeaves() >> totalLeaves
-
-        employeeService.getEmployeeById(id) >> Optional.of(employee)
+        employee.getAvailableLeaves() >> availableLeaves
 
         Employee updatedEmployee = Mock() {
             getId() >> id
@@ -434,7 +434,7 @@ class EmployeeControllerSpec extends Specification {
             getLastName() >> lastName
             getRole() >> role
             getTotalLeaves() >> updatedTotalLeaves
-            getAvailableLeaves() >> availableLeaves
+            getAvailableLeaves() >> updatedAvailableLeaves
             getManager() >> manager
             getIsDeleted() >> isDeleted
         }
@@ -443,13 +443,13 @@ class EmployeeControllerSpec extends Specification {
         EmployeeResponse employeeResponse = employeeController.updateEmployee(id, updateEmployeeRequest)
 
         then:
-        1 * employeeService.updateEmployee(employee, updateEmployeeRequest) >> updatedEmployee
+        1 * employeeService.updateEmployee(id, updateEmployeeRequest) >> updatedEmployee
         id == employeeResponse.getId()
         firstName == employeeResponse.getFirstName()
         lastName == employeeResponse.getLastName()
         role == employeeResponse.getRole()
         updatedTotalLeaves == employeeResponse.getTotalLeaves()
-        availableLeaves == employeeResponse.getAvailableLeaves()
+        updatedAvailableLeaves == employeeResponse.getAvailableLeaves()
     }
 
     def "updateEmployee should throw ResourceNotFoundException if employee id is not found"() {
@@ -457,7 +457,7 @@ class EmployeeControllerSpec extends Specification {
         Long id = 5L
         UpdateEmployeeRequest updateEmployeeRequest = Mock()
 
-        employeeService.getEmployeeById(id) >> Optional.empty()
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new ResourceNotFoundException() }
 
         when:
         employeeController.updateEmployee(id, updateEmployeeRequest)
@@ -466,19 +466,36 @@ class EmployeeControllerSpec extends Specification {
         thrown(ResourceNotFoundException)
     }
 
-    def "updateEmployee should throw InvalidOperationException when EmployeeService updateEmployee throws LeaveCountModificationException"() {
+    def "updateEmployee should throw an InvalidOperationException when EmployeeService updateEmployee throws EmployeeModificationNotAllowedException"() {
         given:
         Long id = 1L
         UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
-        Employee employee = Mock(Employee)
+        String errorCode = "MODIFICATION_NOT_ALLOWED"
 
-        employeeService.getEmployeeById(id) >> Optional.of(employee)
-        employeeService.updateEmployee(employee, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new EmployeeModificationNotAllowedException() }
 
         when:
         employeeController.updateEmployee(id, updateEmployeeRequest)
 
         then:
-        thrown(InvalidOperationException)
+        def e = thrown(InvalidOperationException)
+        errorCode == e.getErrorCode()
+    }
+
+    def "updateEmployee should throw InvalidOperationException when EmployeeService updateEmployee throws LeaveCountModificationException"() {
+        given:
+        Long id = 1L
+        UpdateEmployeeRequest updateEmployeeRequest = Mock(UpdateEmployeeRequest)
+        String errorCode = "INVALID_LEAVE_MODIFICATION"
+
+
+        employeeService.updateEmployee(id, updateEmployeeRequest) >> { throw new LeaveCountModificationException() }
+
+        when:
+        employeeController.updateEmployee(id, updateEmployeeRequest)
+
+        then:
+        def e = thrown(InvalidOperationException)
+        errorCode == e.getErrorCode()
     }
 }

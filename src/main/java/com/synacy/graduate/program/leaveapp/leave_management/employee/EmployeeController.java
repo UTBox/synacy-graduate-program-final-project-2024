@@ -99,6 +99,8 @@ public class EmployeeController {
         try {
             Employee updatedEmployee = employeeService.updateEmployee(id, updateEmployeeRequest);
             return new EmployeeResponse(updatedEmployee);
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceNotFoundException();
         } catch (EmployeeModificationNotAllowedException e) {
             throw new InvalidOperationException("MODIFICATION_NOT_ALLOWED", e.getMessage());
         } catch (LeaveCountModificationException e) {
