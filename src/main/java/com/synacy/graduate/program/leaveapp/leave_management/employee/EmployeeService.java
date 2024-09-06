@@ -70,6 +70,7 @@ public class EmployeeService {
         return employeeRepository.save(employee);
     }
 
+    @Transactional
     public Employee updateEmployee(Long id, UpdateEmployeeRequest updateEmployeeRequest) {
 
         Employee employee = this.getEmployeeById(id).orElseThrow(ResourceNotFoundException::new);
